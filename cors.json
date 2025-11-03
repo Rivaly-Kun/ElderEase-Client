@@ -1,0 +1,8 @@
+[
+  {
+    "origin": ["http://localhost:5173", "https://your-production-domain.com"],
+    "method": ["GET", "HEAD", "PUT", "POST", "DELETE"],
+    "responseHeader": ["Content-Type", "x-goog-meta-*"],
+    "maxAgeSeconds": 3600
+  }
+]
