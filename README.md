@@ -17,3 +17,18 @@ npm run lint
 to run:
 node src/services/server.mjs
 npm start dev
+
+save this:
+
+[
+  {
+    "origin": ["http://localhost:5173", "https://elderease.web.app"],
+    "method": ["GET", "HEAD", "PUT", "POST", "DELETE"],
+    "responseHeader": ["Content-Type", "x-goog-meta-*"],
+    "maxAgeSeconds": 3600
+  }
+]
+ 
+to:
+
+"C:\Users\gabri\cors.json"
