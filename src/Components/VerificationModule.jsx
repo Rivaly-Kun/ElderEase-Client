@@ -659,7 +659,7 @@ const Verification = ({ memberData, getImagePath }) => {
       );
 
       const similarity = Math.max(0, (1 - distance) * 100);
-      const passed = distance < 0.6;
+      const passed = distance < 0.4;
 
       const verificationData = {
         passed,
