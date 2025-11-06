@@ -1,6 +1,6 @@
 [
   {
-    "origin": ["http://localhost:5173", "https://your-production-domain.com"],
+    "origin": ["http://localhost:5173", "https://elderease-3a187.web.app"],
     "method": ["GET", "HEAD", "PUT", "POST", "DELETE"],
     "responseHeader": ["Content-Type", "x-goog-meta-*"],
     "maxAgeSeconds": 3600
