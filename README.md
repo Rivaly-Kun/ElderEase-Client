@@ -13,6 +13,7 @@
 - `npm install dotenv`
 - `npm install express body-parser cors twilio dotenv`
 - `npm install node-fetch`
+- `npm install -g firebase-tools`
 
 ---
 
