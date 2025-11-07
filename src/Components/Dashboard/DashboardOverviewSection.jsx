@@ -191,60 +191,38 @@ const DashboardOverviewSection = ({
         </div>
       </div>
 
-      <div className="space-y-6">
-        <div className="bg-white rounded-2xlShadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-bold text-gray-800 mb-4">Your QR Code</h3>
-          <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-6 rounded-xl flex items-center justify-center mb-4">
-            <QRCode value={memberData.oscaID.toString()} size={180} level="H" />
-          </div>
-          <p className="text-sm text-center text-gray-600 mb-4">
-            ID:{" "}
-            <span className="font-bold text-purple-600">
-              {memberData.oscaID}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+        <h3 className="text-lg font-bold text-gray-800 mb-4">Quick Info</h3>
+        <div className="space-y-3">
+          <div className="flex justify-between">
+            <span className="text-sm text-gray-600">Age</span>
+            <span className="text-sm font-semibold text-gray-800">
+              {memberData.age} years
             </span>
-          </p>
-          <button
-            onClick={() => onNavigate("verification")}
-            className="w-full px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-medium flex items-center justify-center gap-2"
-          >
-            <Download className="w-4 h-4" />
-            Download ID Card
-          </button>
-        </div>
-
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-bold text-gray-800 mb-4">Quick Info</h3>
-          <div className="space-y-3">
-            <div className="flex justify-between">
-              <span className="text-sm text-gray-600">Age</span>
-              <span className="text-sm font-semibold text-gray-800">
-                {memberData.age} years
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-sm text-gray-600">Gender</span>
-              <span className="text-sm font-semibold text-gray-800">
-                {memberData.gender}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-sm text-gray-600">Civil Status</span>
-              <span className="text-sm font-semibold text-gray-800">
-                {memberData.civilStat}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-sm text-gray-600">Contact</span>
-              <span className="text-sm font-semibold text-gray-800">
-                {memberData.contactNum}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-sm text-gray-600">Birthday</span>
-              <span className="text-sm font-semibold text-gray-800">
-                {memberData.birthday}
-              </span>
-            </div>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-sm text-gray-600">Gender</span>
+            <span className="text-sm font-semibold text-gray-800">
+              {memberData.gender}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-sm text-gray-600">Civil Status</span>
+            <span className="text-sm font-semibold text-gray-800">
+              {memberData.civilStat}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-sm text-gray-600">Contact</span>
+            <span className="text-sm font-semibold text-gray-800">
+              {memberData.contactNum}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-sm text-gray-600">Birthday</span>
+            <span className="text-sm font-semibold text-gray-800">
+              {memberData.birthday}
+            </span>
           </div>
         </div>
       </div>

@@ -1619,7 +1619,10 @@ const CitizenHome = () => {
   };
 
   // QR Code Download Function
-  const downloadQRCode = () => {
+  const downloadQRCode = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
     const svg = qrRef.current?.querySelector("svg");
     if (!svg) return;
 
@@ -1646,36 +1649,105 @@ const CitizenHome = () => {
     img.src = "data:image/svg+xml;base64," + btoa(svgData);
   };
 
+  // Download QR Code as SVG
+  const downloadQRCodeSVG = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const svg = qrRef.current?.querySelector("svg");
+    if (!svg) return;
+
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const downloadLink = document.createElement("a");
+    downloadLink.download = `QR-Code-${memberData.oscaID}.svg`;
+    downloadLink.href = "data:image/svg+xml;base64," + btoa(svgData);
+    downloadLink.click();
+  };
+
   // Print Smart ID function
   const printSmartID = () => {
     const smartIdElement = document.querySelector("[data-smart-id-print]");
     if (!smartIdElement) return;
 
-    const clone = smartIdElement.cloneNode(true);
-
-    const applyInlineStyles = (element) => {
-      if (!(element instanceof HTMLElement)) {
-        return;
+    // Convert all images to data URLs or use absolute paths
+    const processElement = async (element) => {
+      const images = element.querySelectorAll("img");
+      for (const img of images) {
+        try {
+          if (!img.src.startsWith("data:") && !img.src.startsWith("http")) {
+            // Convert relative paths to absolute
+            const absoluteUrl = new URL(img.src, window.location.origin).href;
+            img.src = absoluteUrl;
+          }
+        } catch (e) {
+          console.warn("Could not process image:", img.src);
+        }
       }
-
-      const computed = window.getComputedStyle(element);
-      const cssText = Array.from(computed)
-        .map((prop) => `${prop}:${computed.getPropertyValue(prop)};`)
-        .join("");
-      element.setAttribute("style", cssText);
-
-      Array.from(element.children).forEach((child) => applyInlineStyles(child));
     };
 
-    applyInlineStyles(clone);
+    const clone = smartIdElement.cloneNode(true);
+    processElement(clone);
+
+    // Convert Tailwind classes to inline styles
+    const convertToInlineStyles = (element) => {
+      if (!(element instanceof HTMLElement)) return;
+
+      const computed = window.getComputedStyle(element);
+      const important = [
+        "display",
+        "width",
+        "height",
+        "padding",
+        "margin",
+        "border",
+        "background",
+        "color",
+        "font-size",
+        "font-weight",
+        "text-align",
+        "flex-direction",
+        "gap",
+        "align-items",
+        "justify-content",
+        "overflow",
+        "aspect-ratio",
+        "border-radius",
+        "box-shadow",
+        "flex",
+        "flex-shrink",
+        "min-width",
+        "max-width",
+        "line-height",
+        "text-transform",
+        "line-clamp",
+        "object-fit",
+        "object-cover",
+      ];
+
+      important.forEach((prop) => {
+        const value = computed.getPropertyValue(prop);
+        if (value) {
+          element.style.setProperty(prop, value, "important");
+        }
+      });
+
+      // Recursively apply to children
+      for (let child of element.children) {
+        convertToInlineStyles(child);
+      }
+    };
+
+    convertToInlineStyles(clone);
 
     const printFrame = document.createElement("iframe");
-    printFrame.style.position = "fixed";
-    printFrame.style.right = "0";
-    printFrame.style.bottom = "0";
-    printFrame.style.width = "0";
-    printFrame.style.height = "0";
-    printFrame.style.border = "0";
+    printFrame.style.cssText = `
+      position: fixed;
+      right: -10000px;
+      bottom: -10000px;
+      width: 8.5in;
+      height: 11in;
+      border: none;
+    `;
     document.body.appendChild(printFrame);
 
     const frameDocument =
@@ -1685,102 +1757,126 @@ const CitizenHome = () => {
       return;
     }
 
-    const documentHtml = `<!DOCTYPE html>
+    // Create print HTML with Tailwind CSS
+    const printHTML = `<!DOCTYPE html>
 <html>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Smart ID</title>
+    <title>Smart ID Card</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-      @page { 
-        size: A4 portrait; 
+      * {
+        box-sizing: border-box;
+      }
+      
+      html, body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        min-height: 100%;
+        background: white;
+      }
+      
+      body {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        color-adjust: exact;
+      }
+      
+      @page {
+        size: A4 portrait;
         margin: 10mm;
       }
-      @media print {
-        * {
-          margin: 0;
-          padding: 0;
-        }
-        html, body {
-          margin: 0;
-          padding: 0;
-          height: 100%;
-        }
-        body {
-          background: white;
-          -webkit-print-color-adjust: exact;
-          print-color-adjust: exact;
-          display: flex;
-          justify-content: center;
-        }
-        .print-wrapper {
-          width: 100%;
-          display: flex;
-          flex-direction: column;
-          gap: 22mm;
-          align-items: center;
-          padding: 10mm 0;
-        }
-        .print-wrapper .smart-id-card {
-          width: 150mm !important;
-          max-width: 150mm !important;
-          aspect-ratio: 85.6 / 53.98 !important;
-        }
-        h3 {
-          display: none !important;
-        }
-      }
-      body {
-        margin: 0;
-        padding: 20px;
-        background: #f1f5f9;
-        font-family: 'Inter', Arial, sans-serif;
-      }
+      
       .print-wrapper {
         display: flex;
         flex-direction: column;
-        gap: 32px;
+        gap: 30px;
         align-items: center;
+        padding: 20px;
+        width: 100%;
       }
-      .print-wrapper .smart-id-card {
-        width: 700px;
+      
+      .smart-id-card {
+        width: 100% !important;
+        max-width: 650px !important;
+        page-break-inside: avoid;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      
+      img {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
         max-width: 100%;
-        aspect-ratio: 85.6 / 53.98;
+        height: auto;
       }
-      * {
-        box-sizing: border-box;
+      
+      h3 {
+        display: none !important;
+      }
+      
+      @media print {
+        body {
+          margin: 0;
+          padding: 0;
+        }
+        
+        .print-wrapper {
+          padding: 0;
+          gap: 20mm;
+        }
       }
     </style>
   </head>
   <body>
-    <div class="print-wrapper">${clone.outerHTML}</div>
+    <div class="print-wrapper">
+      ${clone.outerHTML}
+    </div>
   </body>
 </html>`;
 
     frameDocument.open();
-    frameDocument.write(documentHtml);
+    frameDocument.write(printHTML);
     frameDocument.close();
 
     const cleanup = () => {
-      if (printFrame.parentNode) {
-        printFrame.parentNode.removeChild(printFrame);
+      try {
+        if (printFrame && printFrame.parentNode) {
+          printFrame.parentNode.removeChild(printFrame);
+        }
+      } catch (e) {
+        console.error("Error cleaning up print frame:", e);
       }
     };
 
     const triggerPrint = () => {
-      const frameWindow = printFrame.contentWindow;
-      if (!frameWindow) {
+      try {
+        const frameWindow = printFrame.contentWindow;
+        if (!frameWindow) {
+          cleanup();
+          return;
+        }
+
+        frameWindow.focus();
+
+        // Wait a bit for content to fully render
+        setTimeout(() => {
+          frameWindow.print();
+
+          // Setup cleanup handlers
+          frameWindow.onafterprint = cleanup;
+          setTimeout(cleanup, 2000);
+        }, 300);
+      } catch (e) {
+        console.error("Error printing:", e);
         cleanup();
-        return;
       }
-      frameWindow.focus();
-      frameWindow.print();
-      frameWindow.onafterprint = cleanup;
-      setTimeout(cleanup, 1000);
     };
 
-    setTimeout(triggerPrint, 300);
+    // Wait for iframe to load content before printing
+    setTimeout(triggerPrint, 500);
   };
 
   if (loading) {
@@ -1906,15 +2002,6 @@ const CitizenHome = () => {
                 <HelpCircle className="w-6 h-6 text-gray-600" />
               </button>
 
-              {/* Theme Selector Button */}
-              <button
-                onClick={() => setShowThemeSelector(!showThemeSelector)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition relative"
-                title="Change Card Theme"
-              >
-                <Palette className="w-6 h-6 text-gray-600" />
-              </button>
-
               {/* QR Code Icon Button */}
               <button
                 onClick={() => setShowQRModal(true)}
@@ -1970,50 +2057,6 @@ const CitizenHome = () => {
               </button>
             </div>
           </div>
-
-          {/* Theme Selector Dropdown */}
-          {showThemeSelector && (
-            <div className="mt-4 lg:mt-0 lg:absolute lg:top-full lg:right-8 lg:translate-y-3 bg-white rounded-xl shadow-2xl border border-gray-200 p-4 z-[1000] w-full sm:w-80 max-w-[calc(100vw-2rem)]">
-              <div className="mb-3">
-                <h3 className="font-bold text-gray-800 mb-1">
-                  Choose ID Card Theme
-                </h3>
-                <p className="text-xs text-gray-500">
-                  Select a color theme for your ID card
-                </p>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                {Object.entries(cardThemes).map(([key, theme]) => (
-                  <button
-                    key={key}
-                    onClick={() => {
-                      setCardTheme(key);
-                      setShowThemeSelector(false);
-                    }}
-                    className={`p-3 rounded-lg border-2 transition hover:scale-105 ${
-                      cardTheme === key
-                        ? `${theme.border} bg-gray-50`
-                        : "border-gray-200 hover:border-gray-300"
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="text-2xl">{theme.icon}</span>
-                      <div className="text-left">
-                        <p className="text-sm font-semibold text-gray-800">
-                          {theme.name}
-                        </p>
-                        {cardTheme === key && (
-                          <p className="text-xs text-green-600 font-medium">
-                            ✓ Active
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* Notifications Dropdown */}
           {showNotifications && (
@@ -2965,6 +3008,47 @@ const CitizenHome = () => {
                 </button>
               </div>
 
+              {/* Theme Selector Dropdown */}
+              <div className="mb-6 bg-gray-50 rounded-xl border border-gray-200 p-4">
+                <div className="mb-3">
+                  <h3 className="font-bold text-gray-800 mb-1">
+                    Choose ID Card Theme
+                  </h3>
+                  <p className="text-xs text-gray-500">
+                    Select a color theme for your ID card
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {Object.entries(cardThemes).map(([key, theme]) => (
+                    <button
+                      key={key}
+                      onClick={() => {
+                        setCardTheme(key);
+                      }}
+                      className={`p-3 rounded-lg border-2 transition hover:scale-105 ${
+                        cardTheme === key
+                          ? `${theme.border} bg-white`
+                          : "border-gray-200 hover:border-gray-300"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-2xl">{theme.icon}</span>
+                        <div className="text-left">
+                          <p className="text-sm font-semibold text-gray-800">
+                            {theme.name}
+                          </p>
+                          {cardTheme === key && (
+                            <p className="text-xs text-green-600 font-medium">
+                              ✓ Active
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* ID Cards Container */}
               <div className="space-y-6 sm:space-y-8" data-smart-id-print>
                 {/* Front of Card */}
@@ -2973,7 +3057,7 @@ const CitizenHome = () => {
                     Front Side
                   </h3>
                   <div
-                    className="smart-id-card bg-white rounded-2xl sm:rounded-3xl shadow-xl overflow-hidden border-4 border-blue-900"
+                    className={`smart-id-card bg-white rounded-2xl sm:rounded-3xl shadow-xl overflow-hidden border-4 ${currentTheme.border}`}
                     style={{
                       width: "100%",
                       maxWidth: "650px",
@@ -2986,7 +3070,9 @@ const CitizenHome = () => {
                       {/* Header with Logo */}
                       <div className="flex items-start gap-2 sm:gap-3 mb-2 sm:mb-3">
                         {/* Logo Circle */}
-                        <div className="w-10 sm:w-12 md:w-14 h-10 sm:h-12 md:h-14 rounded-full bg-blue-900 flex-shrink-0 overflow-hidden border border-sm:border-2 md:border-2 border-white flex items-center justify-center">
+                        <div
+                          className={`w-10 sm:w-12 md:w-14 h-10 sm:h-12 md:h-14 rounded-full ${currentTheme.logo} flex-shrink-0 overflow-hidden border border-sm:border-2 md:border-2 border-white flex items-center justify-center`}
+                        >
                           <img
                             src="/img/ElderEaseNewLogo.png"
                             alt="ElderEase logo"
@@ -3146,7 +3232,7 @@ const CitizenHome = () => {
                     Back Side
                   </h3>
                   <div
-                    className="smart-id-card bg-white rounded-2xl sm:rounded-3xl shadow-xl overflow-hidden border-4 border-blue-900"
+                    className={`smart-id-card bg-white rounded-2xl sm:rounded-3xl shadow-xl overflow-hidden border-4 ${currentTheme.border}`}
                     style={{
                       width: "100%",
                       maxWidth: "650px",
@@ -3305,7 +3391,14 @@ const CitizenHome = () => {
                   className="w-full px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-medium flex items-center justify-center gap-2"
                 >
                   <Download className="w-5 h-5" />
-                  Download QR Code (PNG)
+                  Download as PNG
+                </button>
+                <button
+                  onClick={downloadQRCodeSVG}
+                  className="w-full px-6 py-3 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition font-medium flex items-center justify-center gap-2"
+                >
+                  <Download className="w-5 h-5" />
+                  Download as SVG
                 </button>
                 <button
                   onClick={() => setShowQRModal(false)}

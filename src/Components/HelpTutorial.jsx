@@ -317,18 +317,56 @@ const HelpTutorial = ({ isOpen, onClose, tutorialType = "dashboard" }) => {
       `${currentStep} < ${steps.length - 1} = ${currentStep < steps.length - 1}`
     );
 
+    // Stop current speech
+    if ("speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
+    setIsSpeaking(false);
+
     if (currentStep < steps.length - 1) {
       console.log("Moving to next step:", currentStep + 1);
       setCurrentStep(currentStep + 1);
+
+      // Automatically speak the next step
+      setTimeout(() => {
+        const nextStep = steps[currentStep + 1];
+        if (nextStep && "speechSynthesis" in window) {
+          const text = `${nextStep.title}. ${nextStep.description}`;
+          const utterance = new SpeechSynthesisUtterance(text);
+          utterance.rate = 0.9;
+          window.speechSynthesis.speak(utterance);
+          setIsSpeaking(true);
+          utterance.onend = () => setIsSpeaking(false);
+        }
+      }, 100);
     } else {
       console.log("At last step, closing tutorial");
-      onClose();
+      handleClose();
     }
   };
 
   const handlePrev = () => {
     if (currentStep > 0) {
+      // Stop current speech
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+      setIsSpeaking(false);
+
       setCurrentStep(currentStep - 1);
+
+      // Automatically speak the previous step
+      setTimeout(() => {
+        const prevStep = steps[currentStep - 1];
+        if (prevStep && "speechSynthesis" in window) {
+          const text = `${prevStep.title}. ${prevStep.description}`;
+          const utterance = new SpeechSynthesisUtterance(text);
+          utterance.rate = 0.9;
+          window.speechSynthesis.speak(utterance);
+          setIsSpeaking(true);
+          utterance.onend = () => setIsSpeaking(false);
+        }
+      }, 100);
     }
   };
 
@@ -344,6 +382,15 @@ const HelpTutorial = ({ isOpen, onClose, tutorialType = "dashboard" }) => {
 
       utterance.onend = () => setIsSpeaking(false);
     }
+  };
+
+  const handleClose = () => {
+    // Stop any ongoing speech
+    if ("speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
+    setIsSpeaking(false);
+    onClose();
   };
 
   if (!isOpen) {
@@ -404,7 +451,7 @@ const HelpTutorial = ({ isOpen, onClose, tutorialType = "dashboard" }) => {
         >
           {/* Close Button */}
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-lg transition text-gray-600 hover:text-gray-900"
           >
             <X className="w-5 h-5" />
@@ -473,7 +520,7 @@ const HelpTutorial = ({ isOpen, onClose, tutorialType = "dashboard" }) => {
 
           {/* Skip Tutorial */}
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="w-full mt-3 px-4 py-2 text-sm text-gray-600 hover:text-gray-900 transition"
           >
             Skip Tutorial

@@ -77,14 +77,6 @@ const DashboardTopBar = ({
           </button>
 
           <button
-            onClick={onToggleThemeSelector}
-            className="p-2 hover:bg-gray-100 rounded-lg transition relative"
-            title="Change Card Theme"
-          >
-            <Palette className="w-6 h-6 text-gray-600" />
-          </button>
-
-          <button
             onClick={onShowQR}
             className="p-2 hover:bg-gray-100 rounded-lg transition relative"
             title="View QR Code"
