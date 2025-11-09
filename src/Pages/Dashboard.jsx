@@ -1560,25 +1560,45 @@ const CitizenHome = () => {
     }
   };
   // Signature Pad Functions
+  const getCoordinates = (e, canvas) => {
+    const rect = canvas.getBoundingClientRect();
+    // Check if it's a touch event
+    if (e.touches && e.touches.length > 0) {
+      return {
+        x: e.touches[0].clientX - rect.left,
+        y: e.touches[0].clientY - rect.top,
+      };
+    }
+    // Mouse event
+    return {
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    };
+  };
+
   const startDrawing = (e) => {
+    e.preventDefault(); // Prevent scrolling on touch devices
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     ctx.beginPath();
-    const rect = canvas.getBoundingClientRect();
-    ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+    const coords = getCoordinates(e, canvas);
+    ctx.moveTo(coords.x, coords.y);
     setIsDrawing(true);
   };
 
   const draw = (e) => {
     if (!isDrawing) return;
+    e.preventDefault(); // Prevent scrolling on touch devices
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
-    const rect = canvas.getBoundingClientRect();
-    ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+    const coords = getCoordinates(e, canvas);
+    ctx.lineTo(coords.x, coords.y);
     ctx.strokeStyle = "#000";
     ctx.lineWidth = 2;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
     ctx.stroke();
   };
 
@@ -2958,11 +2978,14 @@ const CitizenHome = () => {
                   ref={canvasRef}
                   width={600}
                   height={200}
-                  className="border-2 border-dashed border-gray-300 rounded-lg bg-white w-full cursor-crosshair"
+                  className="border-2 border-dashed border-gray-300 rounded-lg bg-white w-full cursor-crosshair touch-none"
                   onMouseDown={startDrawing}
                   onMouseMove={draw}
                   onMouseUp={stopDrawing}
                   onMouseLeave={stopDrawing}
+                  onTouchStart={startDrawing}
+                  onTouchMove={draw}
+                  onTouchEnd={stopDrawing}
                 />
               </div>
 
@@ -3251,31 +3274,52 @@ const CitizenHome = () => {
                           <div className="text-right flex-shrink-0">
                             <p className="text-[6px] sm:text-[7px] md:text-xs text-gray-600 leading-none">
                               ISSUED:{" "}
-                              {new Date(
-                                memberData.date_created
-                              ).toLocaleDateString()}
+                              {memberData.dateIssue
+                                ? new Date(
+                                    memberData.dateIssue
+                                  ).toLocaleDateString()
+                                : new Date(
+                                    memberData.date_created
+                                  ).toLocaleDateString()}
                             </p>
                             <p className="text-[6px] sm:text-[7px] md:text-xs text-gray-600 leading-none">
                               EXPIRE:{" "}
-                              {new Date(
-                                new Date(memberData.date_created).setFullYear(
-                                  new Date(
-                                    memberData.date_created
-                                  ).getFullYear() + 2
-                                )
-                              ).toLocaleDateString()}
+                              {memberData.dateExpiration
+                                ? new Date(
+                                    memberData.dateExpiration
+                                  ).toLocaleDateString()
+                                : new Date(
+                                    new Date(
+                                      memberData.date_created
+                                    ).setFullYear(
+                                      new Date(
+                                        memberData.date_created
+                                      ).getFullYear() + 2
+                                    )
+                                  ).toLocaleDateString()}
                             </p>
                           </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-0.5 sm:gap-1 text-[7px] sm:text-[8px] md:text-xs">
-                          <div>
-                            <p>☐ Hypertension</p>
-                            <p>☐ Osteoporosis</p>
-                          </div>
-                          <div>
-                            <p>☐ Diabetes</p>
-                            <p>☐ Others</p>
-                          </div>
+                        <div className="text-[7px] sm:text-[8px] md:text-xs">
+                          {memberData.disabilities ||
+                          memberData.bedridden === "Yes" ? (
+                            <div className="space-y-0.5">
+                              {memberData.disabilities && (
+                                <p className="text-gray-900 font-medium">
+                                  • {memberData.disabilities}
+                                </p>
+                              )}
+                              {memberData.bedridden === "Yes" && (
+                                <p className="text-gray-900 font-medium">
+                                  • Bedridden
+                                </p>
+                              )}
+                            </div>
+                          ) : (
+                            <p className="text-gray-500 italic">
+                              None reported
+                            </p>
+                          )}
                         </div>
                       </div>
 
@@ -3297,10 +3341,13 @@ const CitizenHome = () => {
                         <h5 className="text-[7px] sm:text-[8px] md:text-xs font-bold text-gray-900 mb-0.5 leading-tight">
                           EMERGENCY CONTACT:
                         </h5>
+                        <p className="text-[6px] sm:text-[7px] md:text-xs text-gray-700 leading-tight">
+                          <span className="font-semibold">Contact: </span>
+                          {memberData.contactNum || "Not provided"}
+                        </p>
                         <p className="text-[6px] sm:text-[7px] md:text-xs text-gray-700 leading-tight line-clamp-2">
-                          <span className="font-bold">
-                            {memberData.address}
-                          </span>
+                          <span className="font-semibold">Address: </span>
+                          {memberData.address || "Not provided"}
                         </p>
                       </div>
 

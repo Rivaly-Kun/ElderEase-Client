@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import "./App.css";
-import { auth } from "./Services/firebase";
+import { auth, db } from "./Services/firebase";
 import {
   signInWithEmailAndPassword,
   setPersistence,
   browserLocalPersistence,
   browserSessionPersistence,
 } from "firebase/auth";
+import { ref, get } from "firebase/database";
 import { useNavigate } from "react-router-dom";
 
 function App() {
@@ -50,11 +51,16 @@ function App() {
     e.preventDefault();
     setError("");
     setLoading(true);
+    console.log("🔐 [LOGIN] Login attempt started");
     try {
       // set persistence based on "Remember me" checkbox
       await setPersistence(
         auth,
         remember ? browserLocalPersistence : browserSessionPersistence
+      );
+      console.log(
+        "✅ [LOGIN] Persistence set:",
+        remember ? "Local" : "Session"
       );
 
       const userCredential = await signInWithEmailAndPassword(
@@ -62,12 +68,95 @@ function App() {
         email,
         password
       );
+      console.log(
+        "✅ [LOGIN] Firebase authentication successful for UID:",
+        userCredential.user.uid
+      );
+
+      // Check if user is deceased or archived in the database
+      const uid = userCredential.user.uid;
+      console.log(
+        "🔍 [LOGIN] Checking database for member status with UID:",
+        uid
+      );
+
+      const membersRef = ref(db, "members");
+      const snapshot = await get(membersRef);
+
+      let memberData = null;
+      if (snapshot.exists()) {
+        // Search through all members to find matching authUid
+        const allMembers = snapshot.val();
+        for (const [memberId, member] of Object.entries(allMembers)) {
+          if (member.authUid === uid) {
+            memberData = member;
+            console.log("✅ [LOGIN] Member record found:", {
+              deceased: memberData.deceased,
+              archived: memberData.archived,
+              displayName: memberData.firstName + " " + memberData.lastName,
+            });
+            break;
+          }
+        }
+      }
+
+      if (memberData) {
+        // Check if member is deceased
+        if (memberData.deceased === true) {
+          console.warn(
+            "❌ [LOGIN] ACCESS DENIED - Member is marked as DECEASED"
+          );
+          // Sign out the user immediately
+          await auth.signOut();
+          console.log("🔓 [LOGIN] User signed out due to deceased status");
+          setLoading(false);
+          setError(
+            "This account is marked as deceased. Access is not permitted. Please contact your local administrator if this is an error."
+          );
+          setShowErrorModal(true);
+          return;
+        }
+
+        // Check if member is archived
+        if (memberData.archived === true) {
+          console.warn("❌ [LOGIN] ACCESS DENIED - Member is ARCHIVED");
+          console.log(
+            "📋 [LOGIN] Archived by:",
+            memberData.archivedBy,
+            "on",
+            memberData.date_updated
+          );
+          // Sign out the user immediately
+          await auth.signOut();
+          console.log("🔓 [LOGIN] User signed out due to archived status");
+          setLoading(false);
+          setError(
+            "This account has been archived. Access is not permitted. Please contact your local administrator for assistance."
+          );
+          setShowErrorModal(true);
+          return;
+        }
+
+        console.log(
+          "✅ [LOGIN] Member status check PASSED - Account is active"
+        );
+      } else {
+        console.warn(
+          "⚠️ [LOGIN] WARNING - No member record found for UID:",
+          uid
+        );
+        console.log(
+          "⚠️ [LOGIN] Proceeding with login anyway (might be admin account)"
+        );
+      }
 
       setLoading(false);
+      console.log("✅ [LOGIN] Login SUCCESSFUL - Redirecting to dashboard");
       // navigate to dashboard on successful login
       navigate("/dashboard", { replace: true });
     } catch (err) {
       setLoading(false);
+      console.error("❌ [LOGIN] ERROR:", err.code, "-", err.message);
       const message = getFriendlyError(err?.code);
       setError(message);
       setShowErrorModal(true);
