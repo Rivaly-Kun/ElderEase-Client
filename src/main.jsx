@@ -4,6 +4,7 @@ import "./index.css";
 import App from "./App.jsx";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Dashboard from "./Pages/Dashboard.jsx";
+import Registration from "./Pages/Registration.jsx";
 
 function Root() {
   return (
@@ -18,6 +19,7 @@ function Root() {
             </div>
           }
         />
+        <Route path="/register" element={<Registration />} />
       </Routes>
     </BrowserRouter>
   );

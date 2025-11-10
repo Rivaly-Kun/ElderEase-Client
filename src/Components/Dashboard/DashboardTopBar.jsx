@@ -38,6 +38,7 @@ const DashboardTopBar = ({
     payments: "Payments",
     verification: "Verification",
     events: "Events",
+    announcements: "Announcements",
     documents: "Documents",
   };
 

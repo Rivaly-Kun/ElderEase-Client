@@ -29,6 +29,8 @@ import {
   QrCode as QrCodeIcon,
   Palette,
   Printer,
+  Trash2,
+  Plus,
 } from "lucide-react";
 import Verification from "../Components/VerificationModule";
 import HelpTutorial from "../Components/HelpTutorial";
@@ -41,6 +43,8 @@ import PaymentsSection from "../Components/Dashboard/PaymentsSection";
 import PaymentReceiptModal from "../Components/Dashboard/PaymentReceiptModal";
 import EventsSection from "../Components/Dashboard/EventsSection";
 import EventDetailsModal from "../Components/Dashboard/EventDetailsModal";
+import AnnouncementsSection from "../Components/Dashboard/AnnouncementsSection";
+import AnnouncementDetailsModal from "../Components/Dashboard/AnnouncementDetailsModal";
 
 const PAYMENT_MODE_OPTIONS = [
   "Cash",
@@ -78,10 +82,12 @@ const parseDateInput = (value) => {
 const resolvePaymentDate = (payment) => {
   if (!payment) return null;
   const dateValue =
+    payment.payDate ??
     payment.paymentDate ??
     payment.date ??
     payment.dateReceived ??
     payment.dateCreated ??
+    payment.date_created ??
     payment.timestamp;
   return parseDateInput(dateValue);
 };
@@ -89,6 +95,7 @@ const resolvePaymentDate = (payment) => {
 const resolvePaymentMode = (payment, index) => {
   return (
     payment.resolvedMode ??
+    payment.modePay ??
     payment.paymentMode ??
     payment.mode ??
     payment.payment_mode ??
@@ -175,6 +182,22 @@ const getEventAccent = (category) => {
   );
 };
 
+// Helper to normalize medical conditions from string or array
+const normalizeMedConditions = (medConds) => {
+  if (Array.isArray(medConds)) {
+    return medConds
+      .map((c) => (typeof c === "string" ? c.trim() : c))
+      .filter((c) => typeof c === "string" && c.length > 0);
+  }
+  if (typeof medConds === "string" && medConds.trim()) {
+    return medConds
+      .split(",")
+      .map((c) => c.trim())
+      .filter((c) => c.length > 0);
+  }
+  return [];
+};
+
 const CitizenHome = () => {
   const navigate = useNavigate();
 
@@ -215,6 +238,10 @@ const CitizenHome = () => {
   const [selectedEventDetails, setSelectedEventDetails] = useState(null);
   const [showEventDetailsModal, setShowEventDetailsModal] = useState(false);
 
+  // Announcements Modal State
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
+  const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
+
   // Documents State
   const [memberDocuments, setMemberDocuments] = useState([]);
   const [memberDocumentsLoading, setMemberDocumentsLoading] = useState(false);
@@ -226,6 +253,13 @@ const CitizenHome = () => {
   const [showDocumentUploadModal, setShowDocumentUploadModal] = useState(false);
   const [documentUploadFile, setDocumentUploadFile] = useState(null);
   const [documentUploadLoading, setDocumentUploadLoading] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState(null);
+  const [showDocumentViewerModal, setShowDocumentViewerModal] = useState(false);
+  const [documentViewerLoading, setDocumentViewerLoading] = useState(true);
+
+  // Benefits State
+  const [activeBenefits, setActiveBenefits] = useState([]);
+  const [benefitsLoading, setBenefitsLoading] = useState(false);
 
   // Members State
   const [allMembers, setAllMembers] = useState([]);
@@ -261,7 +295,9 @@ const CitizenHome = () => {
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [notifications, setNotifications] = useState([]);
+  const [readNotificationIds, setReadNotificationIds] = useState(new Set());
   const [sessionTimeout, setSessionTimeout] = useState(null);
+  const [showLogoutConfirmation, setShowLogoutConfirmation] = useState(false);
 
   // Activity & Inactivity
   const inactivityTimerRef = useRef(null);
@@ -430,14 +466,75 @@ const CitizenHome = () => {
     }
   };
 
-  // Logout handler
+  // Logout handler - Show confirmation
+  const handleLogoutClick = useCallback(() => {
+    setShowLogoutConfirmation(true);
+  }, []);
+
+  // Logout handler - Execute logout
   const handleLogout = useCallback(() => {
+    console.log("🔐 [LOGOUT] Logout initiated");
+    setShowLogoutConfirmation(false);
     // Sign out from Firebase
-    auth.signOut().then(() => {
-      localStorage.removeItem("user");
-      navigate("/login", { replace: true });
-    });
+    auth
+      .signOut()
+      .then(() => {
+        console.log("✅ [LOGOUT] Firebase sign out successful");
+        localStorage.removeItem("user");
+        sessionStorage.removeItem("user");
+        console.log("✅ [LOGOUT] User data cleared from storage");
+        console.log("🔄 [LOGOUT] Redirecting to login page...");
+        navigate("/", { replace: true });
+      })
+      .catch((error) => {
+        console.error("❌ [LOGOUT] Error during sign out:", error);
+      });
   }, [navigate]);
+
+  // Mark notification as read
+  const markNotificationAsRead = useCallback(
+    async (notificationId) => {
+      if (!memberData || !notificationId) return;
+
+      try {
+        const timestamp = Date.now();
+        const readNotifRef = ref(
+          db,
+          `readNotifs/${memberData.oscaID}/${notificationId}`
+        );
+
+        await set(readNotifRef, timestamp);
+
+        // Update local state
+        setReadNotificationIds((prev) => {
+          const newSet = new Set(prev);
+          newSet.add(notificationId);
+          return newSet;
+        });
+
+        console.log(
+          `✅ [NOTIFICATIONS] Marked notification ${notificationId} as read`
+        );
+      } catch (err) {
+        console.error(
+          "❌ [NOTIFICATIONS] Error marking notification as read:",
+          err
+        );
+      }
+    },
+    [memberData]
+  );
+
+  // Compute unread events and announcements
+  const unreadEvents = useMemo(() => {
+    return events.filter((event) => !readNotificationIds.has(event.id));
+  }, [events, readNotificationIds]);
+
+  const unreadAnnouncements = useMemo(() => {
+    return announcements.filter(
+      (announcement) => !readNotificationIds.has(announcement.id)
+    );
+  }, [announcements, readNotificationIds]);
 
   // Fetch payments for current user
   const fetchPayments = useCallback(async () => {
@@ -523,6 +620,37 @@ const CitizenHome = () => {
       setError("Failed to fetch events: " + err.message);
     } finally {
       setEventsLoading(false);
+    }
+  }, []);
+
+  // Fetch active benefits
+  const fetchBenefits = useCallback(async () => {
+    try {
+      setBenefitsLoading(true);
+      const benefitsRef = ref(db, "benefits");
+      const benefitsSnapshot = await get(benefitsRef);
+
+      if (benefitsSnapshot.exists()) {
+        const benefitsData = benefitsSnapshot.val();
+        const benefitsArray = Object.entries(benefitsData)
+          .map(([key, value]) => ({
+            id: key,
+            ...value,
+          }))
+          .filter((benefit) => benefit.isActive === true)
+          .sort((a, b) => new Date(b.dateCreated) - new Date(a.dateCreated));
+
+        setActiveBenefits(benefitsArray);
+        console.log("✅ Active benefits fetched:", benefitsArray.length);
+      } else {
+        setActiveBenefits([]);
+        console.log("⚠️ No benefits found in database");
+      }
+    } catch (err) {
+      console.error("❌ Error fetching benefits:", err);
+      setError("Failed to fetch benefits: " + err.message);
+    } finally {
+      setBenefitsLoading(false);
     }
   }, []);
 
@@ -830,6 +958,18 @@ const CitizenHome = () => {
     }
   }, [activeSection, fetchDocumentCategories, fetchMemberDocuments]);
 
+  // Fetch benefits when section changes
+  useEffect(() => {
+    if (activeSection === "benefits") {
+      fetchBenefits();
+    }
+  }, [activeSection, fetchBenefits]);
+
+  // Fetch benefits on component mount for dashboard overview
+  useEffect(() => {
+    fetchBenefits();
+  }, [fetchBenefits]);
+
   const decoratedPayments = useMemo(() => {
     if (!payments?.length) return [];
 
@@ -977,6 +1117,34 @@ const CitizenHome = () => {
     setSelectedReceipt(null);
   };
 
+  const handleViewDocument = (document) => {
+    setSelectedDocument(document);
+    setDocumentViewerLoading(true);
+    setShowDocumentViewerModal(true);
+  };
+
+  const handleCloseDocumentViewer = () => {
+    setShowDocumentViewerModal(false);
+    setSelectedDocument(null);
+    setDocumentViewerLoading(true);
+  };
+
+  const handleDownloadDocument = (doc) => {
+    if (!doc || !doc.downloadURL) return;
+
+    // Create a temporary link element
+    const link = window.document.createElement("a");
+    link.href = doc.downloadURL;
+    link.download = doc.name || "document";
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+
+    // Append to body, click, and remove
+    window.document.body.appendChild(link);
+    link.click();
+    window.document.body.removeChild(link);
+  };
+
   const handleDownloadReceipt = () => {
     if (!selectedReceipt || !memberData) return;
 
@@ -995,54 +1163,142 @@ const CitizenHome = () => {
       ? "0.00"
       : amountValue.toFixed(2);
 
-    const receiptLines = [
-      "ElderEase Payment Receipt",
-      "----------------------------------------",
-      `Member: ${memberData.firstName ?? ""} ${
-        memberData.lastName ?? ""
-      }`.trim(),
-      `OSCA ID: ${memberData.oscaID ?? "N/A"}`,
-      `Payment Date: ${paymentDateLabel}`,
-      `Amount Paid: ₱${formattedAmount}`,
-      `Mode of Payment: ${selectedReceipt.resolvedMode ?? "Not specified"}`,
-      `Status: ${
-        selectedReceipt.payment_status ??
-        selectedReceipt.status ??
-        "Not specified"
-      }`,
-      `Reference: ${
-        selectedReceipt.resolvedReference ??
-        selectedReceipt.id ??
-        "Not provided"
-      }`,
-      `Description: ${
-        selectedReceipt.payDesc ??
-        selectedReceipt.description ??
-        "No description"
-      }`,
-      "",
-      `Generated on: ${new Date().toLocaleString()}`,
+    // Create canvas for receipt image
+    const canvas = document.createElement("canvas");
+    canvas.width = 800;
+    canvas.height = 1000;
+    const ctx = canvas.getContext("2d");
+
+    // Background
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Border
+    ctx.strokeStyle = "#3b82f6";
+    ctx.lineWidth = 4;
+    ctx.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
+
+    // Header background
+    ctx.fillStyle = "#3b82f6";
+    ctx.fillRect(20, 20, canvas.width - 40, 120);
+
+    // Header text
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 36px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText("ELDEREASE", canvas.width / 2, 75);
+    ctx.font = "bold 28px Arial";
+    ctx.fillText("Payment Receipt", canvas.width / 2, 115);
+
+    // Reset text color
+    ctx.fillStyle = "#1f2937";
+    ctx.textAlign = "left";
+
+    let yPos = 180;
+    const leftMargin = 60;
+    const lineHeight = 40;
+
+    // Receipt details
+    const details = [
+      {
+        label: "Member Name:",
+        value: `${memberData.firstName ?? ""} ${
+          memberData.lastName ?? ""
+        }`.trim(),
+      },
+      { label: "OSCA ID:", value: memberData.oscaID ?? "N/A" },
+      { label: "Payment Date:", value: paymentDateLabel },
+      { label: "Amount Paid:", value: `₱${formattedAmount}`, highlight: true },
+      {
+        label: "Mode of Payment:",
+        value: selectedReceipt.resolvedMode ?? "Not specified",
+      },
+      {
+        label: "Status:",
+        value:
+          selectedReceipt.payment_status ??
+          selectedReceipt.status ??
+          "Not specified",
+      },
+      {
+        label: "Reference:",
+        value:
+          selectedReceipt.resolvedReference ??
+          selectedReceipt.id ??
+          "Not provided",
+      },
+      {
+        label: "Description:",
+        value:
+          selectedReceipt.payDesc ??
+          selectedReceipt.description ??
+          "No description",
+      },
     ];
 
-    const fileContent = receiptLines.join("\n");
-    const blob = new Blob([fileContent], {
-      type: "text/plain;charset=utf-8",
+    details.forEach((item, index) => {
+      // Label
+      ctx.font = "bold 20px Arial";
+      ctx.fillStyle = "#6b7280";
+      ctx.fillText(item.label, leftMargin, yPos);
+
+      // Value
+      if (item.highlight) {
+        ctx.font = "bold 32px Arial";
+        ctx.fillStyle = "#10b981";
+      } else {
+        ctx.font = "20px Arial";
+        ctx.fillStyle = "#1f2937";
+      }
+      ctx.fillText(item.value, leftMargin, yPos + 30);
+
+      yPos += item.highlight ? 80 : 70;
     });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    const rawId =
-      selectedReceipt.resolvedReference ??
-      selectedReceipt.id ??
-      Date.now().toString();
-    const safeId = String(rawId)
-      .toLowerCase()
-      .replace(/[^a-z0-9-]/g, "-");
-    link.href = url;
-    link.download = `elderease-receipt-${memberData.oscaID}-${safeId}.txt`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+
+    // Divider line
+    yPos += 20;
+    ctx.strokeStyle = "#e5e7eb";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(60, yPos);
+    ctx.lineTo(canvas.width - 60, yPos);
+    ctx.stroke();
+
+    // Footer
+    yPos += 50;
+    ctx.font = "16px Arial";
+    ctx.fillStyle = "#9ca3af";
+    ctx.textAlign = "center";
+    ctx.fillText(
+      `Generated on: ${new Date().toLocaleString()}`,
+      canvas.width / 2,
+      yPos
+    );
+    ctx.fillText("Thank you for your payment!", canvas.width / 2, yPos + 30);
+    ctx.fillText(
+      "This is an official receipt from ElderEase",
+      canvas.width / 2,
+      yPos + 60
+    );
+
+    // Convert canvas to blob and download
+    canvas.toBlob((blob) => {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      const rawId =
+        selectedReceipt.resolvedReference ??
+        selectedReceipt.id ??
+        Date.now().toString();
+      const safeId = String(rawId)
+        .toLowerCase()
+        .replace(/[^a-z0-9-]/g, "-");
+      link.href = url;
+      link.download = `elderease-receipt-${memberData.oscaID}-${safeId}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }, "image/png");
   };
 
   // Check privacy acceptance and show modal if not accepted
@@ -1129,6 +1385,20 @@ const CitizenHome = () => {
               }));
 
           setNotifications(notificationsArray);
+        }
+
+        // Load read notifications
+        const readNotifsRef = ref(db, `readNotifs/${memberData.oscaID}`);
+        const readNotifsSnapshot = await get(readNotifsRef);
+
+        if (readNotifsSnapshot.exists()) {
+          const readNotifsData = readNotifsSnapshot.val();
+          const readIds = new Set(Object.keys(readNotifsData));
+          setReadNotificationIds(readIds);
+          console.log(
+            "📖 [NOTIFICATIONS] Loaded read notifications:",
+            readIds.size
+          );
         }
       } catch (err) {
         console.error("Error loading notifications:", err);
@@ -1385,7 +1655,7 @@ const CitizenHome = () => {
       tin: memberData.tin || "",
       ncscNum: memberData.ncscNum || "",
       // Medical Information
-      medConditions: memberData.medConditions || "",
+      medConditions: normalizeMedConditions(memberData.medConditions),
       healthRecords: memberData.healthRecords || "",
       healthFacility: memberData.healthFacility || "",
       emergencyHospital: memberData.emergencyHospital || "",
@@ -1413,6 +1683,30 @@ const CitizenHome = () => {
     setEditFormData((prev) => ({
       ...prev,
       [name]: value,
+    }));
+  };
+
+  // Medical Conditions Array Handlers
+  const addMedCondition = () => {
+    setEditFormData((prev) => ({
+      ...prev,
+      medConditions: [...(prev.medConditions || []), ""],
+    }));
+  };
+
+  const updateMedCondition = (index, value) => {
+    setEditFormData((prev) => ({
+      ...prev,
+      medConditions: prev.medConditions.map((cond, i) =>
+        i === index ? value : cond
+      ),
+    }));
+  };
+
+  const removeMedCondition = (index) => {
+    setEditFormData((prev) => ({
+      ...prev,
+      medConditions: prev.medConditions.filter((_, i) => i !== index),
     }));
   };
 
@@ -1480,7 +1774,11 @@ const CitizenHome = () => {
         tin: editFormData.tin || null,
         ncscNum: editFormData.ncscNum || null,
         // Medical Information
-        medConditions: editFormData.medConditions || null,
+        medConditions:
+          Array.isArray(editFormData.medConditions) &&
+          editFormData.medConditions.length > 0
+            ? editFormData.medConditions.filter((c) => c.trim()).join(", ")
+            : null,
         healthRecords: editFormData.healthRecords || null,
         healthFacility: editFormData.healthFacility || null,
         emergencyHospital: editFormData.emergencyHospital || null,
@@ -1537,7 +1835,11 @@ const CitizenHome = () => {
         tin: editFormData.tin,
         ncscNum: editFormData.ncscNum,
         // Medical Information
-        medConditions: editFormData.medConditions,
+        medConditions:
+          Array.isArray(editFormData.medConditions) &&
+          editFormData.medConditions.length > 0
+            ? editFormData.medConditions.filter((c) => c.trim()).join(", ")
+            : null,
         healthRecords: editFormData.healthRecords,
         healthFacility: editFormData.healthFacility,
         emergencyHospital: editFormData.emergencyHospital,
@@ -1965,7 +2267,7 @@ const CitizenHome = () => {
             memberData={memberData}
             activeSection={activeSection}
             onSectionChange={setActiveSection}
-            onLogout={handleLogout}
+            onLogout={handleLogoutClick}
             onShowQR={() => setShowQRModal(true)}
             onClose={() => setIsSidebarOpen(false)}
             getImagePath={getImagePath}
@@ -2008,6 +2310,7 @@ const CitizenHome = () => {
                 {activeSection === "verification" && "Verification"}
                 {activeSection === "events" && "Events"}
                 {activeSection === "documents" && "Documents"}
+                {activeSection === "benefits" && "Active Benefits"}
               </h2>
             </div>
             <div className="flex items-center gap-2 sm:gap-4 flex-wrap justify-end">
@@ -2037,10 +2340,11 @@ const CitizenHome = () => {
                 title="Notifications"
               >
                 <Bell className="w-6 h-6 text-gray-600 group-hover:text-purple-600 transition" />
-                {(events.length > 0 || announcements.length > 0) && (
+                {(unreadEvents.length > 0 ||
+                  unreadAnnouncements.length > 0) && (
                   <div className="absolute top-0 right-0 flex items-center justify-center">
                     <span className="absolute inline-flex items-center justify-center w-5 h-5 bg-gradient-to-br from-red-500 to-pink-500 text-white text-xs font-bold rounded-full ring-2 ring-white animate-pulse shadow-lg">
-                      {events.length + announcements.length}
+                      {unreadEvents.length + unreadAnnouncements.length}
                     </span>
                   </div>
                 )}
@@ -2087,7 +2391,8 @@ const CitizenHome = () => {
                     🔔 Notifications
                   </h3>
                   <p className="text-xs text-gray-500 mt-1">
-                    {events.length + announcements.length} updates
+                    {unreadEvents.length + unreadAnnouncements.length} unread •{" "}
+                    {events.length + announcements.length} total
                   </p>
                 </div>
                 <button
@@ -2113,38 +2418,49 @@ const CitizenHome = () => {
                   {events.length > 0 && (
                     <>
                       <p className="text-xs font-bold text-purple-600 uppercase mb-2">
-                        📅 New Events ({events.length})
+                        📅 Events ({unreadEvents.length} unread)
                       </p>
-                      {events.slice(0, 3).map((event) => (
-                        <div
-                          key={event.id}
-                          className="p-4 bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl border-2 border-purple-200 hover:shadow-md transition cursor-pointer group"
-                          onClick={() => {
-                            setActiveSection("events");
-                            setShowNotifications(false);
-                          }}
-                        >
-                          <div className="flex items-start gap-3">
-                            <span className="text-xl flex-shrink-0">📌</span>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-semibold text-gray-900 text-sm group-hover:text-purple-700 transition truncate">
-                                {event.title || "Event"}
-                              </p>
-                              {event.description && (
-                                <p className="text-xs text-gray-600 mt-1 line-clamp-2">
-                                  {event.description}
+                      {events.slice(0, 3).map((event) => {
+                        const isRead = readNotificationIds.has(event.id);
+                        return (
+                          <div
+                            key={event.id}
+                            className={`p-4 bg-gradient-to-br ${
+                              isRead
+                                ? "from-gray-50 to-gray-100 border-gray-200"
+                                : "from-purple-50 to-blue-50 border-purple-200"
+                            } rounded-xl border-2 hover:shadow-md transition cursor-pointer group relative`}
+                            onClick={() => {
+                              markNotificationAsRead(event.id);
+                              setActiveSection("events");
+                              setShowNotifications(false);
+                            }}
+                          >
+                            {!isRead && (
+                              <div className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                            )}
+                            <div className="flex items-start gap-3">
+                              <span className="text-xl flex-shrink-0">📌</span>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-semibold text-gray-900 text-sm group-hover:text-purple-700 transition truncate">
+                                  {event.title || "Event"}
                                 </p>
-                              )}
-                              <p className="text-xs text-purple-600 font-medium mt-2">
-                                📅{" "}
-                                {event.date
-                                  ? new Date(event.date).toLocaleDateString()
-                                  : "Date TBA"}
-                              </p>
+                                {event.description && (
+                                  <p className="text-xs text-gray-600 mt-1 line-clamp-2">
+                                    {event.description}
+                                  </p>
+                                )}
+                                <p className="text-xs text-purple-600 font-medium mt-2">
+                                  📅{" "}
+                                  {event.date
+                                    ? new Date(event.date).toLocaleDateString()
+                                    : "Date TBA"}
+                                </p>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                       {events.length > 3 && (
                         <p className="text-xs text-gray-500 text-center py-2">
                           +{events.length - 3} more event(s)
@@ -2157,40 +2473,51 @@ const CitizenHome = () => {
                   {announcements.length > 0 && (
                     <>
                       <p className="text-xs font-bold text-blue-600 uppercase mb-2 mt-4">
-                        📢 Announcements ({announcements.length})
+                        📢 Announcements ({unreadAnnouncements.length} unread)
                       </p>
-                      {announcements.slice(0, 3).map((announcement) => (
-                        <div
-                          key={announcement.id}
-                          className="p-4 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl border-2 border-blue-200 hover:shadow-md transition cursor-pointer group"
-                          onClick={() => {
-                            setActiveSection("dashboard");
-                            setShowNotifications(false);
-                          }}
-                        >
-                          <div className="flex items-start gap-3">
-                            <span className="text-xl flex-shrink-0">📣</span>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-semibold text-gray-900 text-sm group-hover:text-blue-700 transition truncate">
-                                {announcement.title || "Announcement"}
-                              </p>
-                              {announcement.content && (
-                                <p className="text-xs text-gray-600 mt-1 line-clamp-2">
-                                  {announcement.content}
+                      {announcements.slice(0, 3).map((announcement) => {
+                        const isRead = readNotificationIds.has(announcement.id);
+                        return (
+                          <div
+                            key={announcement.id}
+                            className={`p-4 bg-gradient-to-br ${
+                              isRead
+                                ? "from-gray-50 to-gray-100 border-gray-200"
+                                : "from-blue-50 to-cyan-50 border-blue-200"
+                            } rounded-xl border-2 hover:shadow-md transition cursor-pointer group relative`}
+                            onClick={() => {
+                              markNotificationAsRead(announcement.id);
+                              setActiveSection("dashboard");
+                              setShowNotifications(false);
+                            }}
+                          >
+                            {!isRead && (
+                              <div className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                            )}
+                            <div className="flex items-start gap-3">
+                              <span className="text-xl flex-shrink-0">📣</span>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-semibold text-gray-900 text-sm group-hover:text-blue-700 transition truncate">
+                                  {announcement.title || "Announcement"}
                                 </p>
-                              )}
-                              <p className="text-xs text-blue-600 font-medium mt-2">
-                                📅{" "}
-                                {announcement.createdAt
-                                  ? new Date(
-                                      announcement.createdAt
-                                    ).toLocaleDateString()
-                                  : "Recently"}
-                              </p>
+                                {announcement.content && (
+                                  <p className="text-xs text-gray-600 mt-1 line-clamp-2">
+                                    {announcement.content}
+                                  </p>
+                                )}
+                                <p className="text-xs text-blue-600 font-medium mt-2">
+                                  📅{" "}
+                                  {announcement.createdAt
+                                    ? new Date(
+                                        announcement.createdAt
+                                      ).toLocaleDateString()
+                                    : "Recently"}
+                                </p>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                       {announcements.length > 3 && (
                         <p className="text-xs text-gray-500 text-center py-2">
                           +{announcements.length - 3} more announcement(s)
@@ -2253,6 +2580,19 @@ const CitizenHome = () => {
             getEventAccent={getEventAccent}
             getImagePath={getImagePath}
             onNavigate={setActiveSection}
+            activeBenefits={activeBenefits}
+            onSelectEvent={(event) => {
+              setSelectedEventDetails({
+                event,
+                status: "upcoming",
+                attendance: null,
+              });
+              setShowEventDetailsModal(true);
+            }}
+            onSelectAnnouncement={(announcement) => {
+              setSelectedAnnouncement(announcement);
+              setShowAnnouncementModal(true);
+            }}
           />
         )}
 
@@ -2920,6 +3260,16 @@ const CitizenHome = () => {
           </div>
         )}
 
+        {/* Announcement Details Modal */}
+        <AnnouncementDetailsModal
+          isOpen={showAnnouncementModal}
+          announcement={selectedAnnouncement}
+          onClose={() => {
+            setShowAnnouncementModal(false);
+            setSelectedAnnouncement(null);
+          }}
+        />
+
         {/* Documents Section */}
         {activeSection === "documents" && (
           <DocumentsSection
@@ -2935,8 +3285,226 @@ const CitizenHome = () => {
             setDocumentUploadFile={setDocumentUploadFile}
             documentUploadLoading={documentUploadLoading}
             handleDocumentUpload={handleDocumentUpload}
+            handleViewDocument={handleViewDocument}
             memberData={memberData}
           />
+        )}
+
+        {/* Announcements Section */}
+        {activeSection === "announcements" && (
+          <AnnouncementsSection
+            announcements={announcements}
+            announcementsLoading={false}
+            onNavigateDashboard={() => setActiveSection("dashboard")}
+            onSelectAnnouncement={(announcement) => {
+              setSelectedAnnouncement(announcement);
+              setShowAnnouncementModal(true);
+            }}
+          />
+        )}
+
+        {/* Benefits Section */}
+        {activeSection === "benefits" && (
+          <div className="space-y-6 p-6">
+            {benefitsLoading ? (
+              <div className="flex items-center justify-center py-20">
+                <div className="flex flex-col items-center gap-4">
+                  <div className="w-16 h-16 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin"></div>
+                  <p className="text-gray-600 font-medium">
+                    Loading benefits...
+                  </p>
+                </div>
+              </div>
+            ) : activeBenefits.length === 0 ? (
+              <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-12 text-center border-2 border-amber-100">
+                <div className="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <svg
+                    className="w-10 h-10 text-amber-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 8c-1.657 0-3-1.343-3-3s1.343-3 3-3 3 1.343 3 3-1.343 3-3 3zm0 2c2.21 0 4 1.79 4 4s-1.79 4-4 4-4-1.79-4-4 1.79-4 4-4zm6 6c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zm-12 0c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z"
+                    />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold text-amber-900 mb-2">
+                  No Active Benefits
+                </h3>
+                <p className="text-amber-700 max-w-md mx-auto">
+                  There are currently no active benefits available. Check back
+                  later for new programs and assistance offerings.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-8">
+                {/* Benefits Header Stats */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white shadow-lg">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-green-100 text-sm font-medium">
+                          Total Benefits
+                        </p>
+                        <p className="text-4xl font-bold">
+                          {activeBenefits.length}
+                        </p>
+                      </div>
+                      <div className="text-5xl opacity-20">🎁</div>
+                    </div>
+                  </div>
+
+                  <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white shadow-lg">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-blue-100 text-sm font-medium">
+                          Total Value
+                        </p>
+                        <p className="text-3xl font-bold">
+                          ₱
+                          {activeBenefits
+                            .reduce((sum, b) => sum + (b.cashValue || 0), 0)
+                            .toLocaleString()}
+                        </p>
+                      </div>
+                      <div className="text-5xl opacity-20">💰</div>
+                    </div>
+                  </div>
+
+                  <div className="bg-gradient-to-br from-yellow-500 to-orange-500 rounded-xl p-6 text-white shadow-lg">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-yellow-100 text-sm font-medium">
+                          Highest Value
+                        </p>
+                        <p className="text-3xl font-bold">
+                          ₱
+                          {Math.max(
+                            ...activeBenefits.map((b) => b.cashValue || 0)
+                          ).toLocaleString()}
+                        </p>
+                        <p className="text-yellow-100 text-xs mt-1">
+                          {
+                            activeBenefits.find(
+                              (b) =>
+                                b.cashValue ===
+                                Math.max(
+                                  ...activeBenefits.map((b) => b.cashValue || 0)
+                                )
+                            )?.benefitName
+                          }
+                        </p>
+                      </div>
+                      <div className="text-5xl opacity-20">⭐</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Benefits Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {activeBenefits.map((benefit, index) => (
+                    <div
+                      key={benefit.id}
+                      className="group relative bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden transform hover:-translate-y-2 border border-gray-100"
+                    >
+                      {/* Gradient Background Decoration */}
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-green-100 to-emerald-100 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-300"></div>
+
+                      {/* Card Header */}
+                      <div className="relative bg-gradient-to-r from-green-600 via-green-500 to-emerald-500 p-6 text-white">
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex-1 z-10">
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="inline-block w-2 h-2 bg-white rounded-full"></span>
+                              <p className="text-xs font-semibold text-green-100 uppercase tracking-wider">
+                                {benefit.benefitID}
+                              </p>
+                            </div>
+                            <h3 className="text-xl font-bold leading-tight">
+                              {benefit.benefitName}
+                            </h3>
+                          </div>
+                          <div className="flex-shrink-0 w-14 h-14 bg-white bg-opacity-20 backdrop-blur-sm rounded-xl flex items-center justify-center border border-white border-opacity-30">
+                            <span className="text-2xl">✓</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Card Content */}
+                      <div className="relative p-6 space-y-5 z-10">
+                        {/* Cash Value Highlight */}
+                        <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 border-l-4 border-green-500">
+                          <p className="text-xs text-gray-600 font-semibold uppercase tracking-wider mb-1">
+                            Cash Value
+                          </p>
+                          <p className="text-3xl font-bold text-green-600">
+                            ₱{benefit.cashValue?.toLocaleString() || "N/A"}
+                          </p>
+                        </div>
+
+                        {/* Description */}
+                        <div>
+                          <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-2">
+                            Description
+                          </label>
+                          <p className="text-gray-700 text-sm leading-relaxed">
+                            {benefit.description}
+                          </p>
+                        </div>
+
+                        {/* Requirements */}
+                        {benefit.requirements && (
+                          <div className="bg-blue-50 rounded-xl p-4 border-l-4 border-blue-500">
+                            <label className="text-xs font-bold text-gray-600 uppercase tracking-wider block mb-2">
+                              📋 Requirements
+                            </label>
+                            <p className="text-gray-700 text-sm leading-relaxed">
+                              {benefit.requirements}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Footer Info */}
+                        <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                          <div className="flex items-center gap-2 text-xs text-gray-500">
+                            <svg
+                              className="w-4 h-4"
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v2a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H8a2 2 0 01-2-2V7z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                            <span>
+                              {new Date(benefit.dateCreated).toLocaleDateString(
+                                "en-PH",
+                                {
+                                  year: "numeric",
+                                  month: "short",
+                                  day: "numeric",
+                                }
+                              )}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1 bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold">
+                            <span>●</span>
+                            <span>Active</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         )}
 
         {/* Floating ID Card Button - Bottom Right */}
@@ -2948,6 +3516,141 @@ const CitizenHome = () => {
           <CreditCard className="w-7 h-7" />
         </button>
       </div>
+
+      {/* Document Viewer Modal */}
+      {showDocumentViewerModal && selectedDocument && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[95vh] flex flex-col">
+            {/* Header */}
+            <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+              <div className="flex-1 min-w-0">
+                <h3 className="text-2xl font-bold text-gray-800 truncate">
+                  {selectedDocument.name}
+                </h3>
+                <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
+                  <span>📁 {selectedDocument.category}</span>
+                  <span>
+                    📅{" "}
+                    {new Date(selectedDocument.uploadedAt).toLocaleDateString()}
+                  </span>
+                  <span>
+                    💾{" "}
+                    {(() => {
+                      const bytes = selectedDocument.size;
+                      if (bytes === 0) return "0 Bytes";
+                      const k = 1024;
+                      const sizes = ["Bytes", "KB", "MB", "GB"];
+                      const i = Math.floor(Math.log(bytes) / Math.log(k));
+                      return (
+                        Math.round((bytes / Math.pow(k, i)) * 100) / 100 +
+                        " " +
+                        sizes[i]
+                      );
+                    })()}
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={handleCloseDocumentViewer}
+                className="p-2 hover:bg-gray-100 rounded-lg transition ml-4"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Document Content */}
+            <div className="flex-1 overflow-auto p-6 bg-gray-50 relative">
+              {/* Loading Overlay */}
+              {documentViewerLoading && (
+                <div className="absolute inset-0 bg-gray-50 flex items-center justify-center z-10">
+                  <div className="text-center">
+                    <div className="w-16 h-16 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mx-auto mb-4"></div>
+                    <p className="text-gray-700 font-semibold text-lg">
+                      Loading document...
+                    </p>
+                    <p className="text-gray-500 text-sm mt-2">
+                      Please wait while we prepare your file
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {selectedDocument.contentType?.includes("image") ? (
+                <div className="flex items-center justify-center h-full">
+                  <img
+                    src={selectedDocument.downloadURL}
+                    alt={selectedDocument.name}
+                    className="max-w-full max-h-full object-contain rounded-lg shadow-lg"
+                    onLoad={() => setDocumentViewerLoading(false)}
+                    onError={() => setDocumentViewerLoading(false)}
+                  />
+                </div>
+              ) : selectedDocument.contentType?.includes("pdf") ? (
+                <iframe
+                  src={selectedDocument.downloadURL}
+                  className="w-full h-full min-h-[600px] rounded-lg border-2 border-gray-300"
+                  title={selectedDocument.name}
+                  onLoad={() => setDocumentViewerLoading(false)}
+                />
+              ) : selectedDocument.contentType?.includes("word") ||
+                selectedDocument.contentType?.includes("document") ||
+                selectedDocument.name?.toLowerCase().endsWith(".docx") ||
+                selectedDocument.name?.toLowerCase().endsWith(".doc") ||
+                selectedDocument.contentType?.includes("sheet") ||
+                selectedDocument.contentType?.includes("excel") ||
+                selectedDocument.name?.toLowerCase().endsWith(".xlsx") ||
+                selectedDocument.name?.toLowerCase().endsWith(".xls") ||
+                selectedDocument.contentType?.includes("presentation") ||
+                selectedDocument.contentType?.includes("powerpoint") ||
+                selectedDocument.name?.toLowerCase().endsWith(".pptx") ||
+                selectedDocument.name?.toLowerCase().endsWith(".ppt") ? (
+                <iframe
+                  src={`https://docs.google.com/gview?url=${encodeURIComponent(
+                    selectedDocument.downloadURL
+                  )}&embedded=true`}
+                  className="w-full h-full min-h-[600px] rounded-lg border-2 border-gray-300"
+                  title={selectedDocument.name}
+                  onLoad={() => setDocumentViewerLoading(false)}
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-center p-8">
+                  <File className="w-24 h-24 text-gray-400 mb-4" />
+                  <h4 className="text-xl font-bold text-gray-800 mb-2">
+                    Preview not available
+                  </h4>
+                  <p className="text-gray-600 mb-6">
+                    This file type cannot be previewed in the browser.
+                  </p>
+                  <button
+                    onClick={() => handleDownloadDocument(selectedDocument)}
+                    className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium flex items-center gap-2"
+                  >
+                    <Download className="w-5 h-5" />
+                    Download to View
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Footer with Actions */}
+            <div className="p-6 border-t border-gray-200 bg-white flex gap-3 rounded-b-2xl">
+              <button
+                onClick={handleCloseDocumentViewer}
+                className="flex-1 px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition font-medium"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => handleDownloadDocument(selectedDocument)}
+                className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium flex items-center justify-center gap-2"
+              >
+                <Download className="w-5 h-5" />
+                Download
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Signature Modal */}
       {showSignatureModal && (
@@ -3302,6 +4005,7 @@ const CitizenHome = () => {
                         </div>
                         <div className="text-[7px] sm:text-[8px] md:text-xs">
                           {memberData.disabilities ||
+                          memberData.medConditions ||
                           memberData.bedridden === "Yes" ? (
                             <div className="space-y-0.5">
                               {memberData.disabilities && (
@@ -3309,6 +4013,17 @@ const CitizenHome = () => {
                                   • {memberData.disabilities}
                                 </p>
                               )}
+                              {memberData.medConditions &&
+                                memberData.medConditions
+                                  .split(",")
+                                  .map((condition, idx) => (
+                                    <p
+                                      key={idx}
+                                      className="text-gray-900 font-medium"
+                                    >
+                                      • {condition.trim()}
+                                    </p>
+                                  ))}
                               {memberData.bedridden === "Yes" && (
                                 <p className="text-gray-900 font-medium">
                                   • Bedridden
@@ -3761,17 +4476,50 @@ const CitizenHome = () => {
                     />
                   </div>
                   <div className="lg:col-span-2 bg-white rounded-xl p-4 shadow-sm">
-                    <label className="text-xs font-bold text-red-600 uppercase tracking-wider mb-2 block">
-                      Medical Conditions
-                    </label>
-                    <textarea
-                      name="medConditions"
-                      value={editFormData.medConditions || ""}
-                      onChange={handleEditInputChange}
-                      rows="2"
-                      placeholder="List any medical conditions"
-                      className="w-full text-base font-medium text-gray-900 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none resize-none"
-                    />
+                    <div className="flex items-center justify-between mb-3">
+                      <label className="text-xs font-bold text-red-600 uppercase tracking-wider">
+                        Medical Conditions
+                      </label>
+                      <button
+                        type="button"
+                        onClick={addMedCondition}
+                        className="inline-flex items-center gap-1 px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 font-semibold rounded-lg transition-colors text-sm"
+                      >
+                        <Plus size={16} />
+                        Add
+                      </button>
+                    </div>
+                    {editFormData.medConditions &&
+                    editFormData.medConditions.length > 0 ? (
+                      <div className="space-y-2">
+                        {editFormData.medConditions.map((condition, index) => (
+                          <div key={index} className="flex gap-2">
+                            <input
+                              type="text"
+                              value={condition}
+                              onChange={(e) =>
+                                updateMedCondition(index, e.target.value)
+                              }
+                              placeholder="Enter medical condition"
+                              className="flex-1 text-base font-medium text-gray-900 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeMedCondition(index)}
+                              className="inline-flex items-center justify-center px-3 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-colors"
+                              title="Remove condition"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-500 italic py-2">
+                        No medical conditions added yet. Click "Add" to start
+                        adding conditions.
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -4255,7 +5003,7 @@ const CitizenHome = () => {
               {/* Action Buttons */}
               <div className="flex gap-3 pt-4 border-t">
                 <button
-                  onClick={() => handleLogout()}
+                  onClick={() => setShowLogoutConfirmation(true)}
                   className="flex-1 px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition font-medium"
                 >
                   Decline & Logout
@@ -4279,6 +5027,52 @@ const CitizenHome = () => {
         onClose={() => setShowHelpTutorial(false)}
         tutorialType={tutorialType}
       />
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutConfirmation && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full">
+            <div className="flex justify-center mb-4">
+              <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center">
+                <svg
+                  className="w-8 h-8 text-red-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                  />
+                </svg>
+              </div>
+            </div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-2 text-center">
+              Confirm Logout?
+            </h2>
+            <p className="text-gray-600 text-center mb-6">
+              Are you sure you want to log out? You'll need to sign in again to
+              access your account.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowLogoutConfirmation(false)}
+                className="flex-1 px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleLogout}
+                className="flex-1 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-semibold"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

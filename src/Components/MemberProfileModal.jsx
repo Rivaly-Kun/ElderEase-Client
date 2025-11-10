@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { X, Users, Camera, Printer } from "lucide-react";
 import QRCode from "react-qr-code";
 import { ref as dbRef, ref, get, update, child } from "firebase/database";
-import { db } from "../services/firebase";
+import { db } from "./services/firebase";
 import {
   getAuth,
   updatePassword,
@@ -197,6 +197,58 @@ const MemberProfileModal = ({
                     )}
                   </div>
 
+                  {/* ID Booklet # */}
+                  <div className="bg-white rounded-xl p-4 shadow-sm">
+                    <label className="text-xs font-bold text-purple-600 uppercase tracking-wider mb-1 block">
+                      ID Booklet #
+                    </label>
+                    <p className="text-lg font-bold text-gray-900">
+                      {isEditing
+                        ? formData.contrNum || selectedMember.contrNum || "N/A"
+                        : selectedMember.contrNum || "N/A"}
+                    </p>
+                  </div>
+
+                  {/* Last Name (Surname) */}
+                  <div className="bg-white rounded-xl p-4 shadow-sm">
+                    <label className="text-xs font-bold text-purple-600 uppercase tracking-wider mb-1 block">
+                      Surname
+                    </label>
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        name="lastName"
+                        value={formData.lastName || ""}
+                        onChange={handleChange}
+                        className="w-full text-lg font-bold text-gray-900 border rounded-lg px-2 py-1 focus:ring-2 focus:ring-purple-400 outline-none"
+                      />
+                    ) : (
+                      <p className="text-lg font-bold text-gray-900">
+                        {selectedMember.lastName}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Suffix */}
+                  <div className="bg-white rounded-xl p-4 shadow-sm">
+                    <label className="text-xs font-bold text-purple-600 uppercase tracking-wider mb-1 block">
+                      Suffix
+                    </label>
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        name="suffix"
+                        value={formData.suffix || ""}
+                        onChange={handleChange}
+                        className="w-full text-lg font-bold text-gray-900 border rounded-lg px-2 py-1 focus:ring-2 focus:ring-purple-400 outline-none"
+                      />
+                    ) : (
+                      <p className="text-lg font-bold text-gray-900">
+                        {selectedMember.suffix || "N/A"}
+                      </p>
+                    )}
+                  </div>
+
                   {/* First Name */}
                   <div className="bg-white rounded-xl p-4 shadow-sm">
                     <label className="text-xs font-bold text-purple-600 uppercase tracking-wider mb-1 block">
@@ -233,46 +285,6 @@ const MemberProfileModal = ({
                     ) : (
                       <p className="text-lg font-bold text-gray-900">
                         {selectedMember.middleName}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Last Name */}
-                  <div className="bg-white rounded-xl p-4 shadow-sm">
-                    <label className="text-xs font-bold text-purple-600 uppercase tracking-wider mb-1 block">
-                      Last Name
-                    </label>
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        name="lastName"
-                        value={formData.lastName || ""}
-                        onChange={handleChange}
-                        className="w-full text-lg font-bold text-gray-900 border rounded-lg px-2 py-1 focus:ring-2 focus:ring-purple-400 outline-none"
-                      />
-                    ) : (
-                      <p className="text-lg font-bold text-gray-900">
-                        {selectedMember.lastName}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Suffix */}
-                  <div className="bg-white rounded-xl p-4 shadow-sm">
-                    <label className="text-xs font-bold text-purple-600 uppercase tracking-wider mb-1 block">
-                      Suffix
-                    </label>
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        name="suffix"
-                        value={formData.suffix || ""}
-                        onChange={handleChange}
-                        className="w-full text-lg font-bold text-gray-900 border rounded-lg px-2 py-1 focus:ring-2 focus:ring-purple-400 outline-none"
-                      />
-                    ) : (
-                      <p className="text-lg font-bold text-gray-900">
-                        {selectedMember.suffix || "N/A"}
                       </p>
                     )}
                   </div>

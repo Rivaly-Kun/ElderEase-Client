@@ -283,6 +283,55 @@ function App() {
               <button type="submit" className="login-btn" disabled={loading}>
                 {loading ? "Signing in..." : "Log In"}
               </button>
+
+              {/* Registration Link */}
+              <div
+                style={{
+                  textAlign: "center",
+                  marginTop: "20px",
+                  paddingTop: "20px",
+                  borderTop: "1px solid #e0e0e0",
+                }}
+              >
+                <p
+                  style={{
+                    color: "#666",
+                    fontSize: "14px",
+                    marginBottom: "10px",
+                  }}
+                >
+                  Not yet a member?
+                </p>
+                <button
+                  type="button"
+                  onClick={() => (window.location.href = "/register")}
+                  style={{
+                    background:
+                      "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                    color: "white",
+                    border: "none",
+                    padding: "12px 30px",
+                    borderRadius: "8px",
+                    fontSize: "14px",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                    transition: "all 0.3s ease",
+                    boxShadow: "0 4px 15px rgba(102, 126, 234, 0.4)",
+                  }}
+                  onMouseOver={(e) => {
+                    e.target.style.transform = "translateY(-2px)";
+                    e.target.style.boxShadow =
+                      "0 6px 20px rgba(102, 126, 234, 0.6)";
+                  }}
+                  onMouseOut={(e) => {
+                    e.target.style.transform = "translateY(0)";
+                    e.target.style.boxShadow =
+                      "0 4px 15px rgba(102, 126, 234, 0.4)";
+                  }}
+                >
+                  Register as New Senior Citizen
+                </button>
+              </div>
             </form>
           </div>
         </div>

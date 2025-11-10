@@ -7,6 +7,8 @@ import {
   Download,
   LogOut,
   QrCode as QrCodeIcon,
+  Gift,
+  Megaphone,
 } from "lucide-react";
 
 const DashboardSidebar = ({
@@ -132,6 +134,17 @@ const DashboardSidebar = ({
             <span className="font-medium">Events</span>
           </button>
           <button
+            onClick={() => handleNavigate("announcements")}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition ${
+              activeSection === "announcements"
+                ? "bg-purple-50 text-purple-600"
+                : "text-gray-600 hover:bg-gray-50"
+            }`}
+          >
+            <Megaphone className="w-5 h-5" />
+            <span className="font-medium">Announcements</span>
+          </button>
+          <button
             onClick={() => handleNavigate("documents")}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition ${
               activeSection === "documents"
@@ -141,6 +154,17 @@ const DashboardSidebar = ({
           >
             <Download className="w-5 h-5" />
             <span className="font-medium">Documents</span>
+          </button>
+          <button
+            onClick={() => handleNavigate("benefits")}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition ${
+              activeSection === "benefits"
+                ? "bg-purple-50 text-purple-600"
+                : "text-gray-600 hover:bg-gray-50"
+            }`}
+          >
+            <Gift className="w-5 h-5" />
+            <span className="font-medium">Benefits</span>
           </button>
         </div>
       </nav>

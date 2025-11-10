@@ -13,6 +13,9 @@ const DashboardOverviewSection = ({
   getEventAccent,
   getImagePath,
   onNavigate,
+  activeBenefits,
+  onSelectEvent,
+  onSelectAnnouncement,
 }) => (
   <div className="p-4 sm:p-8">
     <div className="flex flex-col gap-4 sm:gap-6 mb-6">
@@ -55,19 +58,89 @@ const DashboardOverviewSection = ({
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4">
-          <h3 className="text-[11px] sm:text-xs font-semibold text-gray-600 mb-1.5">
-            Active Benefits
-          </h3>
-          <p className="text-2xl sm:text-3xl font-bold text-gray-800">0</p>
+      {/* Quick Info Card */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 sm:p-6">
+        <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-4">
+          📋 Quick Info
+        </h3>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          {/* Age */}
+          <div className="flex flex-col">
+            <span className="text-[11px] sm:text-xs font-semibold text-gray-500 uppercase mb-1.5">
+              Age
+            </span>
+            <p className="text-lg sm:text-xl font-bold text-gray-800">
+              {memberData?.birthDate
+                ? new Date().getFullYear() -
+                  new Date(memberData.birthDate).getFullYear()
+                : "—"}
+            </p>
+          </div>
+
+          {/* Gender */}
+          <div className="flex flex-col">
+            <span className="text-[11px] sm:text-xs font-semibold text-gray-500 uppercase mb-1.5">
+              Gender
+            </span>
+            <p className="text-lg sm:text-xl font-bold text-gray-800 capitalize">
+              {memberData?.gender || "—"}
+            </p>
+          </div>
+
+          {/* Civil Status */}
+          <div className="flex flex-col">
+            <span className="text-[11px] sm:text-xs font-semibold text-gray-500 uppercase mb-1.5">
+              Civil Status
+            </span>
+            <p className="text-lg sm:text-xl font-bold text-gray-800 capitalize">
+              {memberData?.civilStatus || "—"}
+            </p>
+          </div>
+
+          {/* Birthday */}
+          <div className="flex flex-col">
+            <span className="text-[11px] sm:text-xs font-semibold text-gray-500 uppercase mb-1.5">
+              Birthday
+            </span>
+            <p className="text-lg sm:text-xl font-bold text-gray-800">
+              {memberData?.birthDate
+                ? new Date(memberData.birthDate).toLocaleDateString("en-US", {
+                    month: "2-digit",
+                    day: "2-digit",
+                    year: "numeric",
+                  })
+                : "—"}
+            </p>
+          </div>
+
+          {/* Contact */}
+          <div className="flex flex-col">
+            <span className="text-[11px] sm:text-xs font-semibold text-gray-500 uppercase mb-1.5">
+              Contact
+            </span>
+            <p className="text-lg sm:text-xl font-bold text-gray-800">
+              {memberData?.phone || memberData?.contact || "—"}
+            </p>
+          </div>
         </div>
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4">
-          <h3 className="text-[11px] sm:text-xs font-semibold text-gray-600 mb-1.5">
-            Pending Requests
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
+        <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg shadow-sm border border-green-200 p-3 sm:p-4">
+          <h3 className="text-[11px] sm:text-xs font-semibold text-green-600 mb-1.5">
+            🎁 Active Benefits
           </h3>
-          <p className="text-2xl sm:text-3xl font-bold text-gray-800">0</p>
+          <p className="text-2xl sm:text-3xl font-bold text-green-700">
+            {activeBenefits && activeBenefits.length > 0
+              ? activeBenefits.length
+              : 0}
+          </p>
+          <p className="text-[10px] text-green-600 mt-1">
+            {activeBenefits && activeBenefits.length > 0
+              ? "Available for you"
+              : "Check back soon"}
+          </p>
         </div>
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4">
           <h3 className="text-[11px] sm:text-xs font-semibold text-gray-600 mb-1.5">
@@ -115,7 +188,8 @@ const DashboardOverviewSection = ({
                 return (
                   <div
                     key={event.id}
-                    className="flex gap-3 sm:gap-4 p-3 sm:p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
+                    className="flex gap-3 sm:gap-4 p-3 sm:p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition cursor-pointer"
+                    onClick={() => onSelectEvent && onSelectEvent(event)}
                   >
                     <div className={`p-2 rounded flex-shrink-0 ${background}`}>
                       <Calendar className={`w-4 sm:w-5 h-4 sm:h-5 ${icon}`} />
@@ -169,7 +243,10 @@ const DashboardOverviewSection = ({
                 return (
                   <div
                     key={announcement.id}
-                    className="pb-4 border-b border-gray-100 last:border-b-0 last:pb-0"
+                    className="pb-4 border-b border-gray-100 last:border-b-0 last:pb-0 cursor-pointer hover:bg-blue-50 p-3 -mx-3 px-3 rounded transition"
+                    onClick={() =>
+                      onSelectAnnouncement && onSelectAnnouncement(announcement)
+                    }
                   >
                     <h3 className="font-semibold text-gray-800 mb-1 text-sm sm:text-base">
                       {announcement.title}
@@ -196,19 +273,19 @@ const DashboardOverviewSection = ({
 
       <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 p-4 sm:p-6">
         <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-4">
-          Quick Info
+          📋 Quick Info
         </h3>
         <div className="space-y-3 text-sm">
           <div className="flex justify-between gap-2">
             <span className="text-xs sm:text-sm text-gray-600">Age</span>
             <span className="text-xs sm:text-sm font-semibold text-gray-800">
-              {memberData.age} years
+              {memberData.age || "—"} years
             </span>
           </div>
           <div className="flex justify-between gap-2">
             <span className="text-xs sm:text-sm text-gray-600">Gender</span>
             <span className="text-xs sm:text-sm font-semibold text-gray-800">
-              {memberData.gender}
+              {memberData.gender || "—"}
             </span>
           </div>
           <div className="flex justify-between gap-2">
@@ -216,19 +293,32 @@ const DashboardOverviewSection = ({
               Civil Status
             </span>
             <span className="text-xs sm:text-sm font-semibold text-gray-800">
-              {memberData.civilStat}
+              {memberData.civilStat || "—"}
             </span>
           </div>
           <div className="flex justify-between gap-2">
             <span className="text-xs sm:text-sm text-gray-600">Contact</span>
             <span className="text-xs sm:text-sm font-semibold text-gray-800 break-all">
-              {memberData.contactNum}
+              {memberData.contactNum || "—"}
             </span>
           </div>
           <div className="flex justify-between gap-2">
             <span className="text-xs sm:text-sm text-gray-600">Birthday</span>
             <span className="text-xs sm:text-sm font-semibold text-gray-800">
-              {memberData.birthday}
+              {memberData.birthday || "—"}
+            </span>
+          </div>
+          <div className="border-t border-gray-200 pt-3 mt-3" />
+          <div className="flex justify-between gap-2">
+            <span className="text-xs sm:text-sm text-gray-600">Blood Type</span>
+            <span className="text-xs sm:text-sm font-semibold text-gray-800">
+              {memberData.bloodType || "—"}
+            </span>
+          </div>
+          <div className="flex justify-between gap-2">
+            <span className="text-xs sm:text-sm text-gray-600">Address</span>
+            <span className="text-xs sm:text-sm font-semibold text-gray-800 text-right">
+              {memberData.completeAddress || memberData.address || "—"}
             </span>
           </div>
         </div>

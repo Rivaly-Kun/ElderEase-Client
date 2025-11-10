@@ -9,6 +9,7 @@ import {
   Folder,
   FolderOpen,
   Trash2,
+  Eye,
 } from "lucide-react";
 
 const DocumentsSection = ({
@@ -24,6 +25,7 @@ const DocumentsSection = ({
   setDocumentUploadFile,
   documentUploadLoading,
   handleDocumentUpload,
+  handleViewDocument,
   memberData,
 }) => {
   const [expandedCategory, setExpandedCategory] = useState(null);
@@ -226,17 +228,28 @@ const DocumentsSection = ({
                                     </div>
                                   </div>
                                 </div>
-                                {doc.downloadURL && (
-                                  <a
-                                    href={doc.downloadURL}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition flex-shrink-0 ml-2"
-                                    title="Download document"
-                                  >
-                                    <Download className="w-5 h-5" />
-                                  </a>
-                                )}
+                                <div className="flex items-center gap-2 ml-2">
+                                  {doc.downloadURL && (
+                                    <>
+                                      <button
+                                        onClick={() => handleViewDocument(doc)}
+                                        className="p-2 text-purple-600 hover:bg-purple-100 rounded-lg transition flex-shrink-0"
+                                        title="View document"
+                                      >
+                                        <Eye className="w-5 h-5" />
+                                      </button>
+                                      <a
+                                        href={doc.downloadURL}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition flex-shrink-0"
+                                        title="Download document"
+                                      >
+                                        <Download className="w-5 h-5" />
+                                      </a>
+                                    </>
+                                  )}
+                                </div>
                               </div>
                             ))}
                         </div>
