@@ -286,6 +286,7 @@ const CitizenHome = () => {
   const qrRef = useRef(null);
   const [showQRModal, setShowQRModal] = useState(false);
   const [showIDCardModal, setShowIDCardModal] = useState(false);
+  const [orgSettings, setOrgSettings] = useState(null);
 
   // Reminders & Modals
   const [facialRecognitionReminder, setFacialRecognitionReminder] =
@@ -419,6 +420,35 @@ const CitizenHome = () => {
 
     return unsubscribe;
   }, [navigate]);
+
+  // Fetch Organization Settings
+  useEffect(() => {
+    const fetchOrgSettings = async () => {
+      try {
+        console.log(
+          "🔄 Fetching organization settings from settings/idSettings..."
+        );
+        const settingsRef = ref(db, "settings/idSettings");
+        const settingsSnapshot = await get(settingsRef);
+        if (settingsSnapshot.exists()) {
+          const settings = settingsSnapshot.val();
+          setOrgSettings(settings);
+          console.log("✅ Organization settings loaded:", settings);
+          console.log("President Name:", settings.presidentName);
+          console.log("Organization Name:", settings.organizationName);
+          console.log("Contact Number:", settings.contactNumber);
+        } else {
+          console.warn(
+            "⚠️ No organization settings found in settings/idSettings"
+          );
+        }
+      } catch (err) {
+        console.error("❌ Error fetching organization settings:", err);
+      }
+    };
+
+    fetchOrgSettings();
+  }, []);
 
   const fetchMemberData = async (oscaID) => {
     try {
@@ -3716,6 +3746,10 @@ const CitizenHome = () => {
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[95vh] overflow-y-auto">
             <div className="p-6">
+              {console.log(
+                "🎴 ID Card Modal Rendering - orgSettings:",
+                orgSettings
+              )}
               {/* Header */}
               <div className="flex items-center justify-between mb-6 pb-4 border-b">
                 <div>
@@ -3724,6 +3758,12 @@ const CitizenHome = () => {
                   </h2>
                   <p className="text-sm text-gray-500">
                     ID No: {memberData.oscaID}
+                  </p>
+                  {/* DEBUG: Show orgSettings status */}
+                  <p className="text-xs text-red-500 mt-1">
+                    DEBUG: orgSettings loaded:{" "}
+                    {orgSettings ? "✅ YES" : "❌ NO"} | President:{" "}
+                    {orgSettings?.presidentName || "NOT FOUND"}
                   </p>
                 </div>
                 <button
@@ -3807,12 +3847,12 @@ const CitizenHome = () => {
                         </div>
                         <div className="flex-1 min-w-0">
                           <h4 className="text-[9px] sm:text-xs md:text-sm font-bold text-blue-900 leading-tight italic">
-                            Barangay Pinagbuhatan Senior Citizens Association
-                            Inc.
+                            {orgSettings?.organizationName ||
+                              "Barangay Pinagbuhatan Senior Citizens Association Inc."}
                           </h4>
                           <p className="text-[7px] sm:text-[8px] md:text-xs text-gray-600 leading-tight">
-                            Unit 3, 2nd Floor, Robern Bldg., Evangelista
-                            Extension St., Pinagbuhatan, Pasig City 1601
+                            {orgSettings?.organizationAddress ||
+                              "Unit 3, 2nd Floor, Robern Bldg., Evangelista Extension St., Pinagbuhatan, Pasig City 1601"}
                           </p>
                         </div>
                       </div>
@@ -4045,9 +4085,13 @@ const CitizenHome = () => {
                         </h5>
                         <p className="text-[6px] sm:text-[7px] md:text-xs text-gray-700 leading-tight text-justify">
                           This is to certify that the bearer is a bona fide
-                          member of Barangay Pinagbuhatan Senior Citizens. If
-                          found, please call{" "}
-                          <span className="font-bold">0948-789-4396</span>.
+                          member of{" "}
+                          {orgSettings?.barangayName || "Barangay Pinagbuhatan"}{" "}
+                          Senior Citizens. If found, please call{" "}
+                          <span className="font-bold">
+                            {orgSettings?.contactNumber || "0948-789-4396"}
+                          </span>
+                          .
                         </p>
                       </div>
 
@@ -4070,10 +4114,11 @@ const CitizenHome = () => {
                       <div className="pt-1 sm:pt-2 border-t border-gray-300 text-center">
                         <div className="h-3 sm:h-4 md:h-5 mb-0.5"></div>
                         <p className="text-[7px] sm:text-[8px] md:text-xs font-semibold text-gray-900 leading-tight">
-                          Mr. Ricardo H. Tlazon
+                          {orgSettings?.presidentName ||
+                            "Mr. Ricardo H. Tlazon"}
                         </p>
                         <p className="text-[6px] sm:text-[7px] md:text-xs text-gray-600 leading-tight">
-                          President
+                          {orgSettings?.presidentDesignation || "President"}
                         </p>
                       </div>
                     </div>
