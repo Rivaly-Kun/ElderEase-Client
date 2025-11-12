@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { db, storage } from "../Services/firebase";
-import { ref, set, push } from "firebase/database";
+import { ref, set, push, get } from "firebase/database";
 import {
   ref as storageRef,
   uploadString,
@@ -18,13 +18,6 @@ import {
 } from "lucide-react";
 
 // Hardcoded location data for Barangay Pinagbuhatan
-const PINAGBUHATAN_PUROKS = [
-  "Purok Catleya",
-  "Purok Jasmin",
-  "Purok Rosal",
-  "Purok Velasco Ave / Urbano",
-];
-
 const BARANGAY = "Pinagbuhatan";
 const CITY = "Pasig City";
 const PROVINCE = "Metro Manila";
@@ -38,6 +31,8 @@ const Registration = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [uploadedDocuments, setUploadedDocuments] = useState([]);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [puroks, setPuroks] = useState([]);
+  const [loadingPuroks, setLoadingPuroks] = useState(true);
 
   // Form data state
   const [formData, setFormData] = useState({
@@ -76,6 +71,47 @@ const Registration = () => {
   });
 
   const [errors, setErrors] = useState({});
+
+  // Fetch puroks from Firebase on component mount
+  useEffect(() => {
+    const fetchPuroks = async () => {
+      try {
+        setLoadingPuroks(true);
+        const puroksRef = ref(db, "settings/idSettings/puroks");
+        const snapshot = await get(puroksRef);
+
+        if (snapshot.exists()) {
+          const puroksData = snapshot.val();
+          // Convert object to array if it's an object, or use as-is if it's already an array
+          const puroksArray = Array.isArray(puroksData)
+            ? puroksData
+            : Object.values(puroksData);
+          setPuroks(puroksArray);
+        } else {
+          // Fallback to default puroks if not found in Firebase
+          setPuroks([
+            "Purok Catleya",
+            "Purok Jasmin",
+            "Purok Rosal",
+            "Purok Velasco Ave / Urbano",
+          ]);
+        }
+      } catch (error) {
+        console.error("Error fetching puroks:", error);
+        // Fallback to default puroks on error
+        setPuroks([
+          "Purok Catleya",
+          "Purok Jasmin",
+          "Purok Rosal",
+          "Purok Velasco Ave / Urbano",
+        ]);
+      } finally {
+        setLoadingPuroks(false);
+      }
+    };
+
+    fetchPuroks();
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -687,13 +723,18 @@ const Registration = () => {
                       name="purok"
                       value={formData.purok}
                       onChange={handleInputChange}
+                      disabled={loadingPuroks}
                       className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 ${
                         errors.purok ? "border-red-500" : "border-gray-300"
+                      } ${
+                        loadingPuroks ? "bg-gray-100 cursor-not-allowed" : ""
                       }`}
                     >
-                      <option value="">Select Purok</option>
-                      {PINAGBUHATAN_PUROKS.map((purok) => (
-                        <option key={purok} value={purok}>
+                      <option value="">
+                        {loadingPuroks ? "Loading puroks..." : "Select Purok"}
+                      </option>
+                      {puroks.map((purok, index) => (
+                        <option key={`${purok}-${index}`} value={purok}>
                           {purok}
                         </option>
                       ))}
