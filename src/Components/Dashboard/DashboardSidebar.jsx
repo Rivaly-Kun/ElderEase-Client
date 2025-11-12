@@ -164,7 +164,7 @@ const DashboardSidebar = ({
             }`}
           >
             <Gift className="w-5 h-5" />
-            <span className="font-medium">Benefits</span>
+            <span className="font-medium">Benefits & Availments</span>
           </button>
         </div>
       </nav>

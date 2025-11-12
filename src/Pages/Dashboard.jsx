@@ -45,6 +45,7 @@ import EventsSection from "../Components/Dashboard/EventsSection";
 import EventDetailsModal from "../Components/Dashboard/EventDetailsModal";
 import AnnouncementsSection from "../Components/Dashboard/AnnouncementsSection";
 import AnnouncementDetailsModal from "../Components/Dashboard/AnnouncementDetailsModal";
+import BenefitsAndAvailmentsSection from "../Components/Dashboard/BenefitsAndAvailmentsSection";
 
 const PAYMENT_MODE_OPTIONS = [
   "Cash",
@@ -1552,9 +1553,24 @@ const CitizenHome = () => {
                 announcementItem.publishedAt ??
                 null;
 
+              const parsedDate = parseDateInput(timestampValue);
               const timestamp =
-                parseDateInput(timestampValue)?.getTime() ??
+                parsedDate?.getTime() ??
                 (typeof timestampValue === "number" ? timestampValue : null);
+              const createdAtIso =
+                parsedDate?.toISOString() ??
+                (typeof timestampValue === "number"
+                  ? new Date(timestampValue).toISOString()
+                  : typeof timestampValue === "string"
+                  ? timestampValue
+                  : null);
+
+              const contentValue =
+                announcementItem.content ??
+                announcementItem.message ??
+                announcementItem.description ??
+                announcementItem.body ??
+                "";
 
               return {
                 id: announcementItem.id ?? `announcement-${index}`,
@@ -1563,13 +1579,34 @@ const CitizenHome = () => {
                   announcementItem.subject ??
                   announcementItem.heading ??
                   "Community Update",
-                message:
-                  announcementItem.message ??
-                  announcementItem.description ??
-                  announcementItem.body ??
+                content: contentValue,
+                message: contentValue,
+                createdAt: createdAtIso,
+                createdBy:
+                  announcementItem.createdBy ??
+                  announcementItem.author ??
+                  announcementItem.postedBy ??
                   "",
+                category:
+                  announcementItem.category ??
+                  announcementItem.type ??
+                  announcementItem.topic ??
+                  "",
+                priority:
+                  announcementItem.priority ??
+                  announcementItem.importance ??
+                  "",
+                targetAudience:
+                  announcementItem.targetAudience ??
+                  announcementItem.audience ??
+                  "",
+                tags:
+                  announcementItem.tags ??
+                  announcementItem.labels ??
+                  announcementItem.keywords ??
+                  null,
                 timestamp,
-                rawTimestamp: timestampValue,
+                rawTimestamp: createdAtIso ?? timestampValue,
               };
             })
             .sort((a, b) => {
@@ -2340,7 +2377,7 @@ const CitizenHome = () => {
                 {activeSection === "verification" && "Verification"}
                 {activeSection === "events" && "Events"}
                 {activeSection === "documents" && "Documents"}
-                {activeSection === "benefits" && "Active Benefits"}
+                {activeSection === "benefits" && "Benefits & Availments"}
               </h2>
             </div>
             <div className="flex items-center gap-2 sm:gap-4 flex-wrap justify-end">
@@ -2462,7 +2499,18 @@ const CitizenHome = () => {
                             } rounded-xl border-2 hover:shadow-md transition cursor-pointer group relative`}
                             onClick={() => {
                               markNotificationAsRead(event.id);
-                              setActiveSection("events");
+                              const status = getEventStatus(
+                                event.date,
+                                event.time
+                              );
+                              const attendanceRecord =
+                                eventAttendance?.[event.id] ?? null;
+                              setSelectedEventDetails({
+                                event,
+                                status,
+                                attendance: attendanceRecord,
+                              });
+                              setShowEventDetailsModal(true);
                               setShowNotifications(false);
                             }}
                           >
@@ -2517,7 +2565,8 @@ const CitizenHome = () => {
                             } rounded-xl border-2 hover:shadow-md transition cursor-pointer group relative`}
                             onClick={() => {
                               markNotificationAsRead(announcement.id);
-                              setActiveSection("dashboard");
+                              setSelectedAnnouncement(announcement);
+                              setShowAnnouncementModal(true);
                               setShowNotifications(false);
                             }}
                           >
@@ -3335,206 +3384,11 @@ const CitizenHome = () => {
 
         {/* Benefits Section */}
         {activeSection === "benefits" && (
-          <div className="space-y-6 p-6">
-            {benefitsLoading ? (
-              <div className="flex items-center justify-center py-20">
-                <div className="flex flex-col items-center gap-4">
-                  <div className="w-16 h-16 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin"></div>
-                  <p className="text-gray-600 font-medium">
-                    Loading benefits...
-                  </p>
-                </div>
-              </div>
-            ) : activeBenefits.length === 0 ? (
-              <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-12 text-center border-2 border-amber-100">
-                <div className="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <svg
-                    className="w-10 h-10 text-amber-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 8c-1.657 0-3-1.343-3-3s1.343-3 3-3 3 1.343 3 3-1.343 3-3 3zm0 2c2.21 0 4 1.79 4 4s-1.79 4-4 4-4-1.79-4-4 1.79-4 4-4zm6 6c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zm-12 0c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z"
-                    />
-                  </svg>
-                </div>
-                <h3 className="text-2xl font-bold text-amber-900 mb-2">
-                  No Active Benefits
-                </h3>
-                <p className="text-amber-700 max-w-md mx-auto">
-                  There are currently no active benefits available. Check back
-                  later for new programs and assistance offerings.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-8">
-                {/* Benefits Header Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white shadow-lg">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-green-100 text-sm font-medium">
-                          Total Benefits
-                        </p>
-                        <p className="text-4xl font-bold">
-                          {activeBenefits.length}
-                        </p>
-                      </div>
-                      <div className="text-5xl opacity-20">🎁</div>
-                    </div>
-                  </div>
-
-                  <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white shadow-lg">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-blue-100 text-sm font-medium">
-                          Total Value
-                        </p>
-                        <p className="text-3xl font-bold">
-                          ₱
-                          {activeBenefits
-                            .reduce((sum, b) => sum + (b.cashValue || 0), 0)
-                            .toLocaleString()}
-                        </p>
-                      </div>
-                      <div className="text-5xl opacity-20">💰</div>
-                    </div>
-                  </div>
-
-                  <div className="bg-gradient-to-br from-yellow-500 to-orange-500 rounded-xl p-6 text-white shadow-lg">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-yellow-100 text-sm font-medium">
-                          Highest Value
-                        </p>
-                        <p className="text-3xl font-bold">
-                          ₱
-                          {Math.max(
-                            ...activeBenefits.map((b) => b.cashValue || 0)
-                          ).toLocaleString()}
-                        </p>
-                        <p className="text-yellow-100 text-xs mt-1">
-                          {
-                            activeBenefits.find(
-                              (b) =>
-                                b.cashValue ===
-                                Math.max(
-                                  ...activeBenefits.map((b) => b.cashValue || 0)
-                                )
-                            )?.benefitName
-                          }
-                        </p>
-                      </div>
-                      <div className="text-5xl opacity-20">⭐</div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Benefits Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {activeBenefits.map((benefit, index) => (
-                    <div
-                      key={benefit.id}
-                      className="group relative bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden transform hover:-translate-y-2 border border-gray-100"
-                    >
-                      {/* Gradient Background Decoration */}
-                      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-green-100 to-emerald-100 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-300"></div>
-
-                      {/* Card Header */}
-                      <div className="relative bg-gradient-to-r from-green-600 via-green-500 to-emerald-500 p-6 text-white">
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex-1 z-10">
-                            <div className="flex items-center gap-2 mb-2">
-                              <span className="inline-block w-2 h-2 bg-white rounded-full"></span>
-                              <p className="text-xs font-semibold text-green-100 uppercase tracking-wider">
-                                {benefit.benefitID}
-                              </p>
-                            </div>
-                            <h3 className="text-xl font-bold leading-tight">
-                              {benefit.benefitName}
-                            </h3>
-                          </div>
-                          <div className="flex-shrink-0 w-14 h-14 bg-white bg-opacity-20 backdrop-blur-sm rounded-xl flex items-center justify-center border border-white border-opacity-30">
-                            <span className="text-2xl">✓</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Card Content */}
-                      <div className="relative p-6 space-y-5 z-10">
-                        {/* Cash Value Highlight */}
-                        <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 border-l-4 border-green-500">
-                          <p className="text-xs text-gray-600 font-semibold uppercase tracking-wider mb-1">
-                            Cash Value
-                          </p>
-                          <p className="text-3xl font-bold text-green-600">
-                            ₱{benefit.cashValue?.toLocaleString() || "N/A"}
-                          </p>
-                        </div>
-
-                        {/* Description */}
-                        <div>
-                          <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-2">
-                            Description
-                          </label>
-                          <p className="text-gray-700 text-sm leading-relaxed">
-                            {benefit.description}
-                          </p>
-                        </div>
-
-                        {/* Requirements */}
-                        {benefit.requirements && (
-                          <div className="bg-blue-50 rounded-xl p-4 border-l-4 border-blue-500">
-                            <label className="text-xs font-bold text-gray-600 uppercase tracking-wider block mb-2">
-                              📋 Requirements
-                            </label>
-                            <p className="text-gray-700 text-sm leading-relaxed">
-                              {benefit.requirements}
-                            </p>
-                          </div>
-                        )}
-
-                        {/* Footer Info */}
-                        <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                          <div className="flex items-center gap-2 text-xs text-gray-500">
-                            <svg
-                              className="w-4 h-4"
-                              fill="currentColor"
-                              viewBox="0 0 20 20"
-                            >
-                              <path
-                                fillRule="evenodd"
-                                d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v2a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H8a2 2 0 01-2-2V7z"
-                                clipRule="evenodd"
-                              />
-                            </svg>
-                            <span>
-                              {new Date(benefit.dateCreated).toLocaleDateString(
-                                "en-PH",
-                                {
-                                  year: "numeric",
-                                  month: "short",
-                                  day: "numeric",
-                                }
-                              )}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1 bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold">
-                            <span>●</span>
-                            <span>Active</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+          <BenefitsAndAvailmentsSection
+            currentUser={user}
+            activeBenefits={activeBenefits}
+            benefitsLoading={benefitsLoading}
+          />
         )}
 
         {/* Floating ID Card Button - Bottom Right */}

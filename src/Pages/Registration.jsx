@@ -17,6 +17,19 @@ import {
   Trash2,
 } from "lucide-react";
 
+// Hardcoded location data for Barangay Pinagbuhatan
+const PINAGBUHATAN_PUROKS = [
+  "Purok Catleya",
+  "Purok Jasmin",
+  "Purok Rosal",
+  "Purok Velasco Ave / Urbano",
+];
+
+const BARANGAY = "Pinagbuhatan";
+const CITY = "Pasig City";
+const PROVINCE = "Metro Manila";
+const REGION = "Manila";
+
 const Registration = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -38,7 +51,7 @@ const Registration = () => {
     firstName: "",
     middleName: "",
     suffix: "",
-    address: "",
+    purok: "",
     placeOfBirth: "",
     birthday: "",
     contactNum: "",
@@ -117,7 +130,7 @@ const Registration = () => {
 
     if (!formData.lastName) newErrors.lastName = "Last name is required";
     if (!formData.firstName) newErrors.firstName = "First name is required";
-    if (!formData.address) newErrors.address = "Address is required";
+    if (!formData.purok) newErrors.purok = "Purok is required";
     if (!formData.placeOfBirth)
       newErrors.placeOfBirth = "Place of birth is required";
     if (!formData.birthday) newErrors.birthday = "Date of birth is required";
@@ -273,7 +286,12 @@ const Registration = () => {
 
         // Location
         placeOfBirth: formData.placeOfBirth,
-        address: formData.address,
+        purok: formData.purok,
+        address: `${formData.purok}, ${BARANGAY}, ${CITY}, ${PROVINCE}, ${REGION}`,
+        barangay: BARANGAY,
+        city: CITY,
+        province: PROVINCE,
+        region: REGION,
         contactNum: formData.contactNum,
 
         // Health and Social Status
@@ -396,15 +414,17 @@ const Registration = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 py-8 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 py-6 sm:py-10 px-3 sm:px-6">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">
-            Senior Citizen Registration
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-800 mb-3">
+            Senior Citizen Membership
           </h1>
-          <p className="text-gray-600">
-            Complete the form below to register for OSCA membership
+          <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto">
+            Enroll in the Senior Citizen membership program of Barangay
+            Pinagbuhatan and help us prepare your records ahead of your OSCA ID
+            release.
           </p>
         </div>
 
@@ -413,7 +433,7 @@ const Registration = () => {
           <div className="flex items-center justify-center">
             <div className="flex items-center">
               <div
-                className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
+                className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold ${
                   step >= 1
                     ? "bg-purple-600 text-white"
                     : "bg-gray-300 text-gray-600"
@@ -422,12 +442,12 @@ const Registration = () => {
                 1
               </div>
               <div
-                className={`w-24 h-1 ${
+                className={`w-16 sm:w-24 h-1 ${
                   step >= 2 ? "bg-purple-600" : "bg-gray-300"
                 }`}
               ></div>
               <div
-                className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
+                className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold ${
                   step >= 2
                     ? "bg-purple-600 text-white"
                     : "bg-gray-300 text-gray-600"
@@ -436,12 +456,12 @@ const Registration = () => {
                 2
               </div>
               <div
-                className={`w-24 h-1 ${
+                className={`w-16 sm:w-24 h-1 ${
                   step >= 3 ? "bg-purple-600" : "bg-gray-300"
                 }`}
               ></div>
               <div
-                className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
+                className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold ${
                   step >= 3
                     ? "bg-purple-600 text-white"
                     : "bg-gray-300 text-gray-600"
@@ -451,19 +471,15 @@ const Registration = () => {
               </div>
             </div>
           </div>
-          <div className="flex justify-between mt-2 max-w-md mx-auto">
-            <span className="text-xs font-medium text-gray-600">
-              Personal Info
-            </span>
-            <span className="text-xs font-medium text-gray-600">
-              Health & Contact
-            </span>
-            <span className="text-xs font-medium text-gray-600">Documents</span>
+          <div className="flex justify-between mt-2 max-w-md mx-auto text-[10px] sm:text-xs">
+            <span className="font-medium text-gray-600">Personal Info</span>
+            <span className="font-medium text-gray-600">Health & Contact</span>
+            <span className="font-medium text-gray-600">Documents</span>
           </div>
         </div>
 
         {/* Form Card */}
-        <div className="bg-white rounded-3xl shadow-xl p-8">
+        <div className="bg-white rounded-3xl shadow-xl p-6 sm:p-8">
           <form onSubmit={handleSubmit}>
             {/* Step 1: Personal Information */}
             {step === 1 && (
@@ -473,7 +489,7 @@ const Registration = () => {
                 </h2>
 
                 {/* Account Information */}
-                <div className="bg-blue-50 rounded-xl p-6 mb-6">
+                <div className="bg-blue-50 rounded-xl p-4 sm:p-6 mb-6">
                   <h3 className="text-lg font-bold text-gray-800 mb-4">
                     Account Credentials
                   </h3>
@@ -490,7 +506,7 @@ const Registration = () => {
                         className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 ${
                           errors.email ? "border-red-500" : "border-gray-300"
                         }`}
-                        placeholder="your.email@example.com"
+                        placeholder="your.name@elderease.com"
                       />
                       {errors.email && (
                         <p className="text-red-500 text-sm mt-1">
@@ -662,25 +678,98 @@ const Registration = () => {
 
                 {/* Address and Birth Information */}
                 <div className="grid grid-cols-1 gap-4">
+                  {/* Purok Selection */}
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Complete Address *
+                      Purok *
                     </label>
-                    <textarea
-                      name="address"
-                      value={formData.address}
+                    <select
+                      name="purok"
+                      value={formData.purok}
                       onChange={handleInputChange}
-                      rows="3"
                       className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 ${
-                        errors.address ? "border-red-500" : "border-gray-300"
+                        errors.purok ? "border-red-500" : "border-gray-300"
                       }`}
-                      placeholder="House No., Street, Barangay, City, Province"
-                    ></textarea>
-                    {errors.address && (
+                    >
+                      <option value="">Select Purok</option>
+                      {PINAGBUHATAN_PUROKS.map((purok) => (
+                        <option key={purok} value={purok}>
+                          {purok}
+                        </option>
+                      ))}
+                    </select>
+                    {errors.purok && (
                       <p className="text-red-500 text-sm mt-1">
-                        {errors.address}
+                        {errors.purok}
                       </p>
                     )}
+                  </div>
+
+                  {/* Barangay (Hardcoded, Display Only) */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Barangay
+                    </label>
+                    <input
+                      type="text"
+                      value={BARANGAY}
+                      disabled
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl bg-gray-100 text-gray-600"
+                    />
+                  </div>
+
+                  {/* City (Hardcoded, Display Only) */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      City
+                    </label>
+                    <input
+                      type="text"
+                      value={CITY}
+                      disabled
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl bg-gray-100 text-gray-600"
+                    />
+                  </div>
+
+                  {/* Province (Hardcoded, Display Only) */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Province
+                    </label>
+                    <input
+                      type="text"
+                      value={PROVINCE}
+                      disabled
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl bg-gray-100 text-gray-600"
+                    />
+                  </div>
+
+                  {/* Region (Hardcoded, Display Only) */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Region
+                    </label>
+                    <input
+                      type="text"
+                      value={REGION}
+                      disabled
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl bg-gray-100 text-gray-600"
+                    />
+                  </div>
+
+                  {/* Full Address Preview */}
+                  <div>
+                    <label className="block text-sm font-semibold text-orange-600 mb-2">
+                      Full Address Preview
+                    </label>
+                    <p className="text-orange-600 text-sm font-medium mb-2">
+                      This value will be saved for the member
+                    </p>
+                    <div className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl bg-gray-50 text-gray-700">
+                      {formData.purok
+                        ? `${formData.purok}, ${BARANGAY}, ${CITY}, ${PROVINCE}, ${REGION}`
+                        : "Select a Purok to preview address"}
+                    </div>
                   </div>
 
                   <div>
@@ -808,17 +897,17 @@ const Registration = () => {
                 </div>
 
                 {/* Navigation Buttons */}
-                <div className="flex gap-4 pt-6">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-6">
                   <button
                     type="button"
                     onClick={handleBackToLogin}
-                    className="flex-1 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition font-semibold"
+                    className="flex-1 w-full py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition font-semibold"
                   >
                     Back to Login
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition font-semibold"
+                    className="flex-1 w-full py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition font-semibold"
                   >
                     Next: Health & Contact Info
                   </button>
@@ -834,7 +923,7 @@ const Registration = () => {
                 </h2>
 
                 {/* Health and Social Status */}
-                <div className="bg-green-50 rounded-xl p-6">
+                <div className="bg-green-50 rounded-xl p-4 sm:p-6">
                   <h3 className="text-lg font-bold text-gray-800 mb-4">
                     Health and Social Status
                   </h3>
@@ -1054,17 +1143,17 @@ const Registration = () => {
                 </div>
 
                 {/* Navigation Buttons */}
-                <div className="flex gap-4 pt-6">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-6">
                   <button
                     type="button"
                     onClick={() => setStep(1)}
-                    className="flex-1 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition font-semibold"
+                    className="flex-1 w-full py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition font-semibold"
                   >
                     Back
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition font-semibold"
+                    className="flex-1 w-full py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition font-semibold"
                   >
                     Next: Upload Documents
                   </button>
@@ -1079,7 +1168,7 @@ const Registration = () => {
                   Step 3: Upload Documents
                 </h2>
 
-                <div className="bg-yellow-50 border-2 border-yellow-300 rounded-xl p-6 mb-6">
+                <div className="bg-yellow-50 border-2 border-yellow-300 rounded-xl p-4 sm:p-6 mb-6">
                   <h3 className="text-lg font-bold text-gray-800 mb-2">
                     📋 Required Documents
                   </h3>
@@ -1097,7 +1186,7 @@ const Registration = () => {
                 </div>
 
                 {/* File Upload Area */}
-                <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center">
+                <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 sm:p-8 text-center">
                   <Upload className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                   <h3 className="text-lg font-semibold text-gray-800 mb-2">
                     Upload Your Documents
@@ -1161,7 +1250,7 @@ const Registration = () => {
                 )}
 
                 {/* Terms and Conditions */}
-                <div className="bg-gray-50 rounded-xl p-6">
+                <div className="bg-gray-50 rounded-xl p-5 sm:p-6">
                   <h3 className="text-lg font-semibold text-gray-800 mb-3">
                     Important Notice
                   </h3>
@@ -1179,11 +1268,11 @@ const Registration = () => {
                 </div>
 
                 {/* Navigation Buttons */}
-                <div className="flex gap-4 pt-6">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-6">
                   <button
                     type="button"
                     onClick={() => setStep(2)}
-                    className="flex-1 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition font-semibold"
+                    className="flex-1 w-full py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition font-semibold"
                     disabled={loading}
                   >
                     Back
@@ -1191,7 +1280,7 @@ const Registration = () => {
                   <button
                     type="submit"
                     disabled={loading || uploadedDocuments.length === 0}
-                    className={`flex-1 py-3 rounded-xl transition font-semibold ${
+                    className={`flex-1 w-full py-3 rounded-xl transition font-semibold ${
                       loading || uploadedDocuments.length === 0
                         ? "bg-gray-400 text-gray-200 cursor-not-allowed"
                         : "bg-green-600 text-white hover:bg-green-700"

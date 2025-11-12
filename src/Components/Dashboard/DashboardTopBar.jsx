@@ -46,51 +46,51 @@ const DashboardTopBar = ({
   const notificationCount = events.length + announcements.length;
 
   return (
-    <div className="bg-white border-b border-gray-200 px-4 sm:px-6 lg:px-8 py-4 relative">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2 sm:gap-3">
+    <div className="bg-white border-b border-gray-200 px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4 relative">
+      <div className="flex items-center justify-between gap-2 sm:gap-3 md:gap-4">
+        <div className="flex items-center gap-1 sm:gap-2 md:gap-3 min-w-0 flex-1">
           <button
             type="button"
             onClick={onToggleSidebar}
-            className="inline-flex items-center justify-center p-2 rounded-lg border border-gray-200 text-gray-600 shadow-sm lg:hidden"
+            className="inline-flex items-center justify-center p-1.5 sm:p-2 rounded-lg border border-gray-200 text-gray-600 shadow-sm flex-shrink-0 lg:hidden hover:bg-gray-50 transition"
             aria-label="Toggle navigation menu"
           >
             {isSidebarOpen ? (
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4 sm:w-5 sm:h-5" />
             ) : (
-              <Menu className="w-5 h-5" />
+              <Menu className="w-4 h-4 sm:w-5 sm:h-5" />
             )}
           </button>
-          <div className="p-2 bg-purple-100 rounded-lg hidden sm:flex">
-            <Calendar className="w-6 h-6 text-purple-600" />
+          <div className="p-1.5 sm:p-2 bg-purple-100 rounded-lg hidden sm:flex flex-shrink-0">
+            <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
           </div>
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-800">
+          <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 truncate">
             {activeTitle}
           </h2>
         </div>
-        <div className="flex items-center gap-2 sm:gap-4 flex-wrap justify-end">
+        <div className="flex items-center gap-1 sm:gap-2 md:gap-4 flex-shrink-0">
           <button
             onClick={onOpenHelp}
-            className="p-2 hover:bg-gray-100 rounded-lg transition relative"
+            className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-lg transition relative flex-shrink-0"
             title="Help & Tutorial"
           >
-            <HelpCircle className="w-6 h-6 text-gray-600" />
+            <HelpCircle className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600" />
           </button>
 
           <button
             onClick={onShowQR}
-            className="p-2 hover:bg-gray-100 rounded-lg transition relative"
+            className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-lg transition relative flex-shrink-0"
             title="View QR Code"
           >
-            <QrCodeIcon className="w-6 h-6 text-gray-600" />
+            <QrCodeIcon className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600" />
           </button>
 
           <button
             onClick={onToggleNotifications}
-            className="p-2 hover:bg-gray-100 rounded-lg transition relative group"
+            className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-lg transition relative group flex-shrink-0"
             title="Notifications"
           >
-            <Bell className="w-6 h-6 text-gray-600 group-hover:text-purple-600 transition" />
+            <Bell className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600 group-hover:text-purple-600 transition" />
             {notificationCount > 0 && (
               <div className="absolute top-0 right-0 flex items-center justify-center">
                 <span className="absolute inline-flex items-center justify-center w-5 h-5 bg-gradient-to-br from-red-500 to-pink-500 text-white text-xs font-bold rounded-full ring-2 ring-white animate-pulse shadow-lg">
