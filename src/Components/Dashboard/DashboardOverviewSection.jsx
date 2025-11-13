@@ -124,6 +124,10 @@ const DashboardOverviewSection = ({
             ) : events.length > 0 ? (
               events.slice(0, 4).map((event) => {
                 const { background, icon } = getEventAccent(event.category);
+                const attendance = eventAttendance
+                  ? eventAttendance[event.id]
+                  : null;
+                const hasAttended = attendance?.lastCheckedInAt ? true : false;
 
                 return (
                   <div
@@ -135,9 +139,16 @@ const DashboardOverviewSection = ({
                       <Calendar className={`w-4 sm:w-5 h-4 sm:h-5 ${icon}`} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-gray-800 mb-1 text-sm sm:text-base">
-                        {event.title}
-                      </h3>
+                      <div className="flex items-start justify-between gap-2 mb-1">
+                        <h3 className="font-semibold text-gray-800 text-sm sm:text-base">
+                          {event.title}
+                        </h3>
+                        {hasAttended && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-bold bg-green-100 text-green-700 whitespace-nowrap flex-shrink-0">
+                            ✓ Attended
+                          </span>
+                        )}
+                      </div>
                       <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:gap-3 text-xs sm:text-sm text-gray-600">
                         <span>
                           📅 {formatEventSchedule(event.date, event.time)}

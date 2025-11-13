@@ -782,9 +782,21 @@ const CitizenHome = () => {
         // Build map of event IDs to attendance status for current member
         Object.entries(allEventsData).forEach(([eventId, eventData]) => {
           if (eventData.attendance) {
-            // Check if current member has attendance record in this event
-            const memberAttendance =
-              eventData.attendance[memberData.firebaseKey];
+            // First try to find by firebaseKey
+            let memberAttendance = eventData.attendance[memberData.firebaseKey];
+            
+            // If not found, search through all attendance records by oscaID or memberId
+            if (!memberAttendance) {
+              Object.entries(eventData.attendance).forEach(([attendanceKey, attendance]) => {
+                if (
+                  attendance.oscaID === memberData.oscaID ||
+                  attendance.memberId === memberData.firebaseKey
+                ) {
+                  memberAttendance = attendance;
+                }
+              });
+            }
+            
             if (memberAttendance) {
               attendanceMap[eventId] = {
                 attended: memberAttendance.lastCheckedInAt ? true : false,
@@ -800,7 +812,7 @@ const CitizenHome = () => {
         });
 
         setEventAttendance(attendanceMap);
-        console.log("✅ Fetched event attendance:", attendanceMap);
+        console.log("✅ Fetched event attendance for", memberData.oscaID, ":", attendanceMap);
       } else {
         setEventAttendance({});
         console.log("⚠️ No events found");
@@ -1019,6 +1031,14 @@ const CitizenHome = () => {
   useEffect(() => {
     fetchBenefits();
   }, [fetchBenefits]);
+
+  // Fetch events and attendance on component mount for dashboard overview
+  useEffect(() => {
+    if (memberData && activeSection === "dashboard") {
+      fetchEvents();
+      fetchEventAttendance();
+    }
+  }, [memberData, activeSection, fetchEvents, fetchEventAttendance]);
 
   const decoratedPayments = useMemo(() => {
     if (!payments?.length) return [];
