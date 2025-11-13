@@ -300,6 +300,8 @@ const CitizenHome = () => {
   const [readNotificationIds, setReadNotificationIds] = useState(new Set());
   const [sessionTimeout, setSessionTimeout] = useState(null);
   const [showLogoutConfirmation, setShowLogoutConfirmation] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+  const loggingOutRef = useRef(false);
 
   // Activity & Inactivity
   const inactivityTimerRef = useRef(null);
@@ -341,6 +343,10 @@ const CitizenHome = () => {
     },
   };
   const currentTheme = cardThemes[cardTheme] || cardThemes.blue;
+
+  useEffect(() => {
+    loggingOutRef.current = loggingOut;
+  }, [loggingOut]);
 
   // Initial Setup & Auth
   useEffect(() => {
@@ -415,6 +421,12 @@ const CitizenHome = () => {
           setLoading(false);
         }
       } else {
+        if (loggingOutRef.current) {
+          console.log(
+            "🔒 [AUTH] Sign-out detected during manual logout, waiting for custom redirect..."
+          );
+          return;
+        }
         navigate("/login", { replace: true });
       }
     });
@@ -506,6 +518,8 @@ const CitizenHome = () => {
   const handleLogout = useCallback(() => {
     console.log("🔐 [LOGOUT] Logout initiated");
     setShowLogoutConfirmation(false);
+    setLoggingOut(true);
+
     // Sign out from Firebase
     auth
       .signOut()
@@ -514,11 +528,16 @@ const CitizenHome = () => {
         localStorage.removeItem("user");
         sessionStorage.removeItem("user");
         console.log("✅ [LOGOUT] User data cleared from storage");
-        console.log("🔄 [LOGOUT] Redirecting to login page...");
-        navigate("/", { replace: true });
+        console.log("🔄 [LOGOUT] Redirecting to login page in 3 seconds...");
+
+        // Wait 3 seconds before redirecting to show loading animation
+        setTimeout(() => {
+          navigate("/", { replace: true });
+        }, 3000);
       })
       .catch((error) => {
         console.error("❌ [LOGOUT] Error during sign out:", error);
+        setLoggingOut(false);
       });
   }, [navigate]);
 
@@ -4969,6 +4988,48 @@ const CitizenHome = () => {
               >
                 Logout
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Logout Loading Animation */}
+      {loggingOut && (
+        <div className="fixed inset-0 bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 bg-opacity-95 flex items-center justify-center z-[60] backdrop-blur-sm">
+          <div className="text-center">
+            <div className="mb-8">
+              <div className="relative inline-block">
+                <div className="w-24 h-24 border-8 border-purple-200 border-t-white rounded-full animate-spin"></div>
+                <div
+                  className="absolute inset-0 w-24 h-24 border-8 border-transparent border-b-pink-300 rounded-full animate-spin"
+                  style={{
+                    animationDirection: "reverse",
+                    animationDuration: "1s",
+                  }}
+                ></div>
+              </div>
+            </div>
+            <div className="space-y-3">
+              <h2 className="text-3xl font-bold text-white mb-2 animate-pulse">
+                Logging Out...
+              </h2>
+              <p className="text-lg text-purple-200">
+                Please wait while we securely sign you out
+              </p>
+              <div className="flex justify-center gap-2 mt-6">
+                <div
+                  className="w-3 h-3 bg-white rounded-full animate-bounce"
+                  style={{ animationDelay: "0s" }}
+                ></div>
+                <div
+                  className="w-3 h-3 bg-white rounded-full animate-bounce"
+                  style={{ animationDelay: "0.2s" }}
+                ></div>
+                <div
+                  className="w-3 h-3 bg-white rounded-full animate-bounce"
+                  style={{ animationDelay: "0.4s" }}
+                ></div>
+              </div>
             </div>
           </div>
         </div>
