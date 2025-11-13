@@ -3653,12 +3653,8 @@ const CitizenHome = () => {
                   <p className="text-sm text-gray-500">
                     ID No: {memberData.oscaID}
                   </p>
-                  {/* DEBUG: Show orgSettings status */}
-                  <p className="text-xs text-red-500 mt-1">
-                    DEBUG: orgSettings loaded:{" "}
-                    {orgSettings ? "✅ YES" : "❌ NO"} | President:{" "}
-                    {orgSettings?.presidentName || "NOT FOUND"}
-                  </p>
+              
+             
                 </div>
                 <button
                   onClick={() => setShowIDCardModal(false)}
