@@ -46,6 +46,8 @@ const Registration = () => {
     firstName: "",
     middleName: "",
     suffix: "",
+    houseNo: "",
+    streetName: "",
     purok: "",
     placeOfBirth: "",
     birthday: "",
@@ -322,8 +324,12 @@ const Registration = () => {
 
         // Location
         placeOfBirth: formData.placeOfBirth,
+        houseNo: formData.houseNo || "",
+        streetName: formData.streetName || "",
         purok: formData.purok,
-        address: `${formData.purok}, ${BARANGAY}, ${CITY}, ${PROVINCE}, ${REGION}`,
+        address: `${formData.houseNo ? formData.houseNo + ", " : ""}${
+          formData.streetName ? formData.streetName + ", " : ""
+        }${formData.purok}, ${BARANGAY}, ${CITY}, ${REGION}`,
         barangay: BARANGAY,
         city: CITY,
         province: PROVINCE,
@@ -358,9 +364,7 @@ const Registration = () => {
         // Additional fields that admin form has (set defaults)
         nationality: "Filipino",
         citizenship: "Filipino",
-        religion: "",
         educAttain: "",
-        bloodType: "",
         tin: "",
         philHealth: "",
         sssId: "",
@@ -720,6 +724,36 @@ const Registration = () => {
 
                 {/* Address and Birth Information */}
                 <div className="grid grid-cols-1 gap-4">
+                  {/* House Number */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      House No.
+                    </label>
+                    <input
+                      type="text"
+                      name="houseNo"
+                      value={formData.houseNo}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      placeholder="123"
+                    />
+                  </div>
+
+                  {/* Street Name */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Street Name
+                    </label>
+                    <input
+                      type="text"
+                      name="streetName"
+                      value={formData.streetName}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      placeholder="Main Street"
+                    />
+                  </div>
+
                   {/* Purok Selection */}
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -752,46 +786,25 @@ const Registration = () => {
                     )}
                   </div>
 
-                  {/* Barangay (Hardcoded, Display Only) */}
+                  {/* Complete Address Preview */}
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Barangay
+                      Complete Address
                     </label>
-                    <input
-                      type="text"
-                      value={BARANGAY}
-                      disabled
-                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl bg-gray-100 text-gray-600"
-                    />
+                    <div className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl bg-gray-50 text-gray-700 min-h-[48px]">
+                      {formData.houseNo || formData.streetName || formData.purok
+                        ? `${formData.houseNo ? formData.houseNo + ", " : ""}${
+                            formData.streetName
+                              ? formData.streetName + ", "
+                              : ""
+                          }${
+                            formData.purok ? formData.purok + ", " : ""
+                          }${BARANGAY}, ${CITY}, ${REGION}`
+                        : "Your complete address will appear here"}
+                    </div>
                   </div>
 
-                  {/* City (Hardcoded, Display Only) */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      City
-                    </label>
-                    <input
-                      type="text"
-                      value={CITY}
-                      disabled
-                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl bg-gray-100 text-gray-600"
-                    />
-                  </div>
-
-                  {/* Province (Hardcoded, Display Only) */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Province
-                    </label>
-                    <input
-                      type="text"
-                      value={PROVINCE}
-                      disabled
-                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl bg-gray-100 text-gray-600"
-                    />
-                  </div>
-
-                  {/* Region (Hardcoded, Display Only) */}
+                  {/* Region (Hardcoded, Display Only) - Kept for reference */}
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Region
