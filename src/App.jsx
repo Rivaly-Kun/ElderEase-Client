@@ -291,7 +291,7 @@ function App() {
                 </p>
                 <button
                   type="button"
-                  onClick={() => (window.location.href = "/register")}
+                  onClick={() => navigate("/register")}
                   className="w-full sm:w-auto px-4 sm:px-8 py-2 sm:py-3 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white text-xs sm:text-sm font-semibold rounded-lg transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0"
                 >
                   Register as New Senior Citizen
