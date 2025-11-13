@@ -784,19 +784,21 @@ const CitizenHome = () => {
           if (eventData.attendance) {
             // First try to find by firebaseKey
             let memberAttendance = eventData.attendance[memberData.firebaseKey];
-            
+
             // If not found, search through all attendance records by oscaID or memberId
             if (!memberAttendance) {
-              Object.entries(eventData.attendance).forEach(([attendanceKey, attendance]) => {
-                if (
-                  attendance.oscaID === memberData.oscaID ||
-                  attendance.memberId === memberData.firebaseKey
-                ) {
-                  memberAttendance = attendance;
+              Object.entries(eventData.attendance).forEach(
+                ([attendanceKey, attendance]) => {
+                  if (
+                    attendance.oscaID === memberData.oscaID ||
+                    attendance.memberId === memberData.firebaseKey
+                  ) {
+                    memberAttendance = attendance;
+                  }
                 }
-              });
+              );
             }
-            
+
             if (memberAttendance) {
               attendanceMap[eventId] = {
                 attended: memberAttendance.lastCheckedInAt ? true : false,
@@ -812,7 +814,12 @@ const CitizenHome = () => {
         });
 
         setEventAttendance(attendanceMap);
-        console.log("✅ Fetched event attendance for", memberData.oscaID, ":", attendanceMap);
+        console.log(
+          "✅ Fetched event attendance for",
+          memberData.oscaID,
+          ":",
+          attendanceMap
+        );
       } else {
         setEventAttendance({});
         console.log("⚠️ No events found");
@@ -2701,10 +2708,14 @@ const CitizenHome = () => {
             onNavigate={setActiveSection}
             activeBenefits={activeBenefits}
             onSelectEvent={(event) => {
+              const attendance = eventAttendance
+                ? eventAttendance[event.id]
+                : null;
+              const status = getEventStatus(event.date, event.time);
               setSelectedEventDetails({
                 event,
-                status: "upcoming",
-                attendance: null,
+                status: status,
+                attendance: attendance,
               });
               setShowEventDetailsModal(true);
             }}
@@ -3653,8 +3664,6 @@ const CitizenHome = () => {
                   <p className="text-sm text-gray-500">
                     ID No: {memberData.oscaID}
                   </p>
-              
-             
                 </div>
                 <button
                   onClick={() => setShowIDCardModal(false)}
