@@ -221,12 +221,14 @@ const EventsSection = ({
                 </span>
                 <span
                   className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold ${
-                    attendance?.attended
+                    attendance?.lastCheckedInAt
                       ? "bg-green-100 text-green-700"
                       : "bg-gray-100 text-gray-700"
                   }`}
                 >
-                  {attendance?.attended ? "✓ Attended" : "○ Not Attended"}
+                  {attendance?.lastCheckedInAt
+                    ? "✓ Attended"
+                    : "○ Not Attended"}
                 </span>
               </div>
               <h3 className="text-xl font-bold text-gray-900 line-clamp-2">

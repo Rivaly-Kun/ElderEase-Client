@@ -2652,6 +2652,7 @@ const CitizenHome = () => {
             memberData={memberData}
             events={events}
             eventsLoading={eventsLoading}
+            eventAttendance={eventAttendance}
             announcements={announcements}
             announcementsLoading={announcementsLoading}
             formatEventSchedule={formatEventSchedule}

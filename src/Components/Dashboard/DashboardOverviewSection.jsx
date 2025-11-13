@@ -6,6 +6,7 @@ const DashboardOverviewSection = ({
   memberData,
   events,
   eventsLoading,
+  eventAttendance,
   announcements,
   announcementsLoading,
   formatEventSchedule,
@@ -91,7 +92,13 @@ const DashboardOverviewSection = ({
           <h3 className="text-[11px] sm:text-xs font-semibold text-gray-600 mb-1.5">
             Events Attended
           </h3>
-          <p className="text-2xl sm:text-3xl font-bold text-gray-800">0</p>
+          <p className="text-2xl sm:text-3xl font-bold text-gray-800">
+            {eventAttendance
+              ? Object.values(eventAttendance).filter(
+                  (att) => att.attended && att.lastCheckedInAt
+                ).length
+              : 0}
+          </p>
         </div>
       </div>
     </div>

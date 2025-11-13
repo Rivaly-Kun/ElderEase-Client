@@ -174,10 +174,12 @@ const BenefitsAndAvailmentsSection = ({
   // Check if user can apply for a benefit (not already received or pending)
   const canApplyForBenefit = useCallback(
     (benefit) => {
-      // Check if already received (approved)
+      // Check if already received (approved) by the current user (matching OSCA ID)
       const alreadyReceived = availedBenefits.some(
         (b) =>
-          b.benefitID === benefit.id || b.benefitName === benefit.benefitName
+          (b.benefitID === benefit.id ||
+            b.benefitName === benefit.benefitName) &&
+          b.oscaID === currentUser?.oscaID
       );
 
       // Check if already has pending request (rejected requests can reapply)
@@ -185,12 +187,13 @@ const BenefitsAndAvailmentsSection = ({
         (r) =>
           (r.benefitID === benefit.id ||
             r.benefitName === benefit.benefitName) &&
-          r.status?.toLowerCase() === "pending"
+          r.status?.toLowerCase() === "pending" &&
+          r.oscaID === currentUser?.oscaID
       );
 
       return !alreadyReceived && !hasPendingRequest;
     },
-    [availedBenefits, benefitRequests]
+    [availedBenefits, benefitRequests, currentUser]
   );
 
   // Get the reason why user cannot apply
@@ -198,7 +201,9 @@ const BenefitsAndAvailmentsSection = ({
     (benefit) => {
       const alreadyReceived = availedBenefits.some(
         (b) =>
-          b.benefitID === benefit.id || b.benefitName === benefit.benefitName
+          (b.benefitID === benefit.id ||
+            b.benefitName === benefit.benefitName) &&
+          b.oscaID === currentUser?.oscaID
       );
 
       if (alreadyReceived) {
@@ -209,7 +214,8 @@ const BenefitsAndAvailmentsSection = ({
         (r) =>
           (r.benefitID === benefit.id ||
             r.benefitName === benefit.benefitName) &&
-          r.status?.toLowerCase() === "pending"
+          r.status?.toLowerCase() === "pending" &&
+          r.oscaID === currentUser?.oscaID
       );
 
       if (hasPendingRequest) {
@@ -218,7 +224,7 @@ const BenefitsAndAvailmentsSection = ({
 
       return null;
     },
-    [availedBenefits, benefitRequests]
+    [availedBenefits, benefitRequests, currentUser]
   );
 
   // Check if a benefit request was rejected
@@ -228,10 +234,11 @@ const BenefitsAndAvailmentsSection = ({
         (r) =>
           (r.benefitID === benefit.id ||
             r.benefitName === benefit.benefitName) &&
-          r.status?.toLowerCase() === "rejected"
+          r.status?.toLowerCase() === "rejected" &&
+          r.oscaID === currentUser?.oscaID
       );
     },
-    [benefitRequests]
+    [benefitRequests, currentUser]
   );
 
   const handleFileUpload = (e) => {

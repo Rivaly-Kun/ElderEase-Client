@@ -450,14 +450,14 @@ const Registration = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 py-6 sm:py-10 px-3 sm:px-6">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 py-6 sm:py-10 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-4xl mx-auto w-full">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl sm:text-4xl font-bold text-gray-800 mb-3">
+        <div className="text-center mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-2 sm:mb-3 px-2">
             Senior Citizen Membership
           </h1>
-          <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto">
+          <p className="text-sm sm:text-base md:text-lg text-gray-600 max-w-2xl mx-auto px-4">
             Enroll in the Senior Citizen membership program of Barangay
             Pinagbuhatan and help us prepare your records ahead of your OSCA ID
             release.
@@ -465,11 +465,11 @@ const Registration = () => {
         </div>
 
         {/* Progress Steps */}
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8 px-2">
           <div className="flex items-center justify-center">
             <div className="flex items-center">
               <div
-                className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold ${
+                className={`w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center font-bold text-sm sm:text-base ${
                   step >= 1
                     ? "bg-purple-600 text-white"
                     : "bg-gray-300 text-gray-600"
@@ -478,12 +478,12 @@ const Registration = () => {
                 1
               </div>
               <div
-                className={`w-16 sm:w-24 h-1 ${
+                className={`w-12 sm:w-16 md:w-24 h-1 ${
                   step >= 2 ? "bg-purple-600" : "bg-gray-300"
                 }`}
               ></div>
               <div
-                className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold ${
+                className={`w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center font-bold text-sm sm:text-base ${
                   step >= 2
                     ? "bg-purple-600 text-white"
                     : "bg-gray-300 text-gray-600"
@@ -492,12 +492,12 @@ const Registration = () => {
                 2
               </div>
               <div
-                className={`w-16 sm:w-24 h-1 ${
+                className={`w-12 sm:w-16 md:w-24 h-1 ${
                   step >= 3 ? "bg-purple-600" : "bg-gray-300"
                 }`}
               ></div>
               <div
-                className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold ${
+                className={`w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center font-bold text-sm sm:text-base ${
                   step >= 3
                     ? "bg-purple-600 text-white"
                     : "bg-gray-300 text-gray-600"
@@ -507,29 +507,35 @@ const Registration = () => {
               </div>
             </div>
           </div>
-          <div className="flex justify-between mt-2 max-w-md mx-auto text-[10px] sm:text-xs">
-            <span className="font-medium text-gray-600">Personal Info</span>
-            <span className="font-medium text-gray-600">Health & Contact</span>
-            <span className="font-medium text-gray-600">Documents</span>
+          <div className="flex justify-between mt-2 sm:mt-3 max-w-xs sm:max-w-md mx-auto text-[9px] sm:text-[10px] md:text-xs px-1">
+            <span className="font-medium text-gray-600 text-center">
+              Personal Info
+            </span>
+            <span className="font-medium text-gray-600 text-center">
+              Health & Contact
+            </span>
+            <span className="font-medium text-gray-600 text-center">
+              Documents
+            </span>
           </div>
         </div>
 
         {/* Form Card */}
-        <div className="bg-white rounded-3xl shadow-xl p-6 sm:p-8">
+        <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl p-4 sm:p-6 md:p-8">
           <form onSubmit={handleSubmit}>
             {/* Step 1: Personal Information */}
             {step === 1 && (
-              <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-gray-800 mb-6">
+              <div className="space-y-4 sm:space-y-6">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-6">
                   Step 1: Personal Information
                 </h2>
 
                 {/* Account Information */}
-                <div className="bg-blue-50 rounded-xl p-4 sm:p-6 mb-6">
-                  <h3 className="text-lg font-bold text-gray-800 mb-4">
+                <div className="bg-blue-50 rounded-xl p-4 sm:p-6 mb-4 sm:mb-6">
+                  <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-3 sm:mb-4">
                     Account Credentials
                   </h3>
-                  <div className="grid grid-cols-1 gap-4">
+                  <div className="grid grid-cols-1 gap-3 sm:gap-4">
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">
                         Email Address *
@@ -552,7 +558,7 @@ const Registration = () => {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className="block text-sm font-semibold text-gray-700 mb-2 mt-4">
                         Password *
                       </label>
                       <div className="relative">
