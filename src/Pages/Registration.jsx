@@ -1233,11 +1233,10 @@ const Registration = () => {
                     📋 Required Documents
                   </h3>
                   <ul className="list-disc list-inside text-gray-700 space-y-1">
-                    <li>Valid Government ID</li>
+                    <li>Pasig City OSCA ID</li>
                     <li>Birth Certificate</li>
                     <li>Proof of Residency (Barangay Certificate)</li>
-                    <li>Recent Photo (passport size)</li>
-                    <li>Medical Records (if applicable)</li>
+                    <li>Latest Photo (1x1 Picture)</li>
                   </ul>
                   <p className="text-sm text-gray-600 mt-3">
                     * Please ensure all documents are clear and readable.
